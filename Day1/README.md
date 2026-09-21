@@ -310,5 +310,5 @@ cd Day1/CustomDockerImage
 docker build -t tektutor/ubuntu:1.0 .
 docker images | grep tektutor
 ```
-
 <img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/275f76f5-1a65-4fe7-8fd4-ae8b6a471363" />
+
