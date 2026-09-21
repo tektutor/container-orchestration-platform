@@ -231,3 +231,4 @@ Check the logs
 ```
 docker logs nginx1-jegan
 ```
+<img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/ddb0711a-b30b-4051-9584-838d9e6c5d68" />
