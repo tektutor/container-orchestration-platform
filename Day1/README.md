@@ -196,3 +196,13 @@ docker ps
 # List all containers including exited ones
 docker ps -a
 ```
+
+
+In the docker run command, let's understand the switches
+<pre>
+it - interactive terminal
+name - name of the container, this one is optional, if we don't provide name, docker engine will randomly assign a name 
+hostname - hostname of the container, this is optional as well, if we don't provide hostname docker engine will assign container ID as hostname
+ubuntu:latest - is the docker container image name, latest is the latest version or tag
+bin/bash - this will start the bash terminal inside the container
+</pre>
