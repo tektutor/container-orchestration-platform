@@ -207,4 +207,13 @@ ubuntu:latest - is the docker container image name, latest is the latest version
 bin/bash - this will start the bash terminal inside the container
 </pre>
 
-# 
+## Lab - Starting the exited containers
+```
+docker start c1-jegan 
+```
+
+## Lab - Getting inside the running container shell
+```
+docker exec -it c1-jegan /bin/bash
+```
+
