@@ -84,11 +84,23 @@
 
 ## Info - Container Runtime
 <pre>
-- is a low-level software that helps managing containers
-  - it can create, start, stop, restart containe
+- is a low-level software that helps managing containers and images
+  - it can create, start, stop, restart container
+  - it can download,list, create and delete images
+- it is not end-user friendly, hence normally no end-users like us use Container Runtimes directly
+- examples
+  - cRun
+  - runC
+  - CRI-O
 </pre>
 
 ## Info - Container Engine
 <pre>
-       
+- is a high-level end-user friendly software that helps managing containers and images 
+- under the hood, Container Engines depends on Container Runtimes to manage containers and images
+- examples
+  - Docker
+    - depends on Containerd, which in turn depends on runC Container Runtime 
+  - Podman
+    - depends on CRI-O Container Runtime
 </pre>
