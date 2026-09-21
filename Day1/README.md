@@ -255,3 +255,17 @@ docker inspect -f {{.NetworkSettings.Networks.bridge.MacAddress}} c2-jegan
  docker stop $(docker ps -qf "name=jegan")
 ```
 <img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/a44f35dc-1478-4508-983d-246e56e395cd" />
+
+## Lab - Deleting a running container gracefully
+```
+docker stop c1-jegan
+docker rm c1-jegan
+```
+
+## Lab - Deleting a running container forcibly
+```
+docker rm -f c1-jegan
+```
+
+
+
