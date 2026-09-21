@@ -50,6 +50,13 @@
 ## Info - Containerization
 <pre>
 - Containerization is a light-weight virtualization technology
+- unlike VMs, containers that runs on same server/machine will share the hardware resources on the underlying host OS
+- containers are light-weight compared to VMs
+- containers are faster compared to VM
+- containers runs in it owns namespace
+  - each container uses about 5~6 different namespaces
+    - PID namespaces
+    - Network namespace
 - Each container or a group of containers represents a single application
 - in many ways Container resembles a Virtual Machine (OS)
 - just like each VM aquires its own IP address, each container get an IP address
@@ -61,5 +68,27 @@
 - practically speaking, in production, one Physical Server will host many Virtual Machines, each Virtual Machine may be hosting multiple containerized
   applications
 - examples
-  
+  - Docker
+  - Containerd
+  - Podman  
+- Containerization is a Linux technology
+- in Linux Kernel
+  - there are 2 features which makes the Containerization possible
+    1. Namespace
+       - helps in isolating one container from the other containers
+    2. Control Groups (CGroups)
+       - helps in applying container level resource quota restrictions 
+       - we can control, how much storage one container can utilize at the max
+       - we can control, how many CPU cores one container can utilize at the max
+</pre>
+
+## Info - Container Runtime
+<pre>
+- is a low-level software that helps managing containers
+  - it can create, start, stop, restart containe
+</pre>
+
+## Info - Container Engine
+<pre>
+       
 </pre>
