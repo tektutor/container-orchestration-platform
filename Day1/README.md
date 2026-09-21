@@ -240,4 +240,13 @@ docker restart c2-jegan c3-jegan c4-jegan
 docker restart $(docker ps -q)
 ```
 
+## Lab - Finding the IP address of a container
+```
+docker exec -it c2-jegan hostname -i
+docker inspect -f {{.NetworkSettings.Networks.bridge.IPAddress}} c2-jegan
+docker inspect -f {{.NetworkSettings.Networks.bridge.MacAddress}} c2-jegan
+```
+
+<img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/0e94118e-f920-41d2-8e04-aa4e8d6bd148" />
+
 
