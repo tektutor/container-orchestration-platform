@@ -237,6 +237,7 @@ docker logs nginx1-jegan
 ```
 docker restart c1-jegan
 docker restart c2-jegan c3-jegan c4-jegan
+docker restart $(docker ps -q)
 ```
 
 
