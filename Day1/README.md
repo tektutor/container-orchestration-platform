@@ -129,7 +129,7 @@
 - each container has its own Port range 0-65535
 </pre>
 
-## Info - What kind of applications we can containerize ?
+## Info - What kind of applications we can containerized ?
 <pre>
 - any server application can be containerized efficiently
 - examples
