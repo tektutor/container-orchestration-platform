@@ -11,7 +11,7 @@ Server 2
 Login to Palmeto Cloud machine with the lab credentials you received from your L&D focal point.
 
 It will then present you an Ubuntu Login, your short firstname will be already typed there, 
-you need type the password 'palmeto@123' without quotes.
+you need to type the password 'palmeto@123' without quotes.
 
 Copy/Paste between your local machine and Palmeto Cloud is disabled as per your Bank Policy.
 
