@@ -169,3 +169,25 @@ docker images
 ```
 <img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/cadbeff3-3028-4a9e-a197-3c1bbc98a1de" />
 
+
+## Lab - Creating containers in interactive mode
+```
+# As soon as you run the below command, docker server, creates a new container and will take us inside the container shell
+# The terminal shell prompt before running this command and after running this command will be different
+docker run -it --name c1-jegan --hostname c1-jegan ubuntu:latest /bin/bash
+
+# Whatever you type here are running within the container shell
+# Find the IP address of the container
+hostname -i
+
+# Find the hostname of the container
+hostname
+
+# List the file and folders
+ls -l
+
+#
+exit
+
+
+```
