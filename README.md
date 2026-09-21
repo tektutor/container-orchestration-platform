@@ -1,1 +1,1 @@
-# container-orchestration-platform
+# Docker, Kubernetes & Red Hat Openshift
