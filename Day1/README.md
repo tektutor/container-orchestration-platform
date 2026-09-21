@@ -217,3 +217,17 @@ docker start c1-jegan
 docker exec -it c1-jegan /bin/bash
 ```
 
+## Lab - Let's create nginx web server container in background(daemon/detached) mode
+```
+docker run -d --name nginx1-jegan --hostname nginx1-jegan nginx:latest 
+```
+
+List all the running containers
+```
+docker ps
+```
+
+Check the logs
+```
+docker logs nginx1-jegan
+```
