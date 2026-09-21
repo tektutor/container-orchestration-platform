@@ -232,3 +232,11 @@ Check the logs
 docker logs nginx1-jegan
 ```
 <img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/ddb0711a-b30b-4051-9584-838d9e6c5d68" />
+
+## Lab - Restart the container
+```
+docker restart c1-jegan
+docker restart c2-jegan c3-jegan c4-jegan
+```
+
+
