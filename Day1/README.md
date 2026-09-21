@@ -92,6 +92,7 @@
   - cRun
   - runC
   - CRI-O
+  - rkt 
 </pre>
 
 ## Info - Container Engine
@@ -103,4 +104,42 @@
     - depends on Containerd, which in turn depends on runC Container Runtime 
   - Podman
     - depends on CRI-O Container Runtime
+</pre>
+
+## Info - Container Images
+<pre>
+- is a set of files, which acts as a specification of a Container
+- a blueprint of a container
+- Container Images is a collection of many Container Image Layers
+- each Container Image Layers brings 
+  - set of folders and files
+- the combination of many image layers, provides the filesystem for  container
+- image layers are shared by one or more Container Images
+- the Docker Image format has become the industry standing image format called OCI
+- any number of containers can be created using the same image
+- it is similar to Windows11-OS-DVD.iso of Ubuntu2604-OS-DVD.iso
+</pre>
+
+## Info - Containers
+<pre>
+- is a running instance of a Container Image
+- each container runs in a separate namespace
+- each container gets one or more Private IPS
+- each container has its own software defined Network Card and network stack
+- each container has its own Port range 0-65535
+</pre>
+
+## Info - What kind of applications we can containerize ?
+<pre>
+- any server application can be containerized efficiently
+- examples
+  - microservices
+  - Web Servers
+  - Application Server
+  - Database Servers
+  - Message Queue Servers
+  - REST API
+  - SOAP API
+  - Web Services
+- anything that runs forever can be containerized
 </pre>
