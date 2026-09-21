@@ -162,3 +162,5 @@ Troubleshooting permission denied error
 newgrp docker
 docker images
 ```
+
+## Lab - Listing 
