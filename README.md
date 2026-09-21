@@ -24,7 +24,7 @@ https://forms.cloud.microsoft/r/AgYy4QLta0
 
 Note
 <pre>
-- Copy/Paste is disabled between your local machine and lab machine is disabled as per your Bank policy
+- Copy/Paste is disabled between your local machine and lab machine as per your Bank policy
 - Kindly complete your pre-test and leave a message in the chat, in case you don't have chat access you 
   can directly confirm once you have completed the test
 - Kindly provide your full name while registering for the pre-test, so that your L&D will be able to 
