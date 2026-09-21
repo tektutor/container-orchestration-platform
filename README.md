@@ -2,10 +2,10 @@
 
 ## Info - Lab details
 Server 1
-![server1](server1.png)
+[server1](server1.png)
 
 Server 2
-![server2](server2.png)
+[server2](server2.png)
 
 ## Pre-test url
 <pre>
