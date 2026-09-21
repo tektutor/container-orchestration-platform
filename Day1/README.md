@@ -278,9 +278,18 @@ docker ps
 ```
 docker images
 docker pull tektutor/spring-ms:1.0
+docker pull hello-world:latest
 docker images
 ```
 
 <img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/957dd819-c44f-42a8-bdac-1603259665af" />
 
 
+## Lab - Deleting a docker image from local registry
+```
+docker images
+docker rmi hello-ms:1.0
+docker rmi hello-world:latest
+docker images
+```
+<img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/2c42b624-dbc0-4937-b166-9cce6f91f1ab" />
