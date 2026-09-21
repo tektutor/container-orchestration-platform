@@ -267,5 +267,10 @@ docker rm c1-jegan
 docker rm -f c1-jegan
 ```
 
-
+## Lab - Renaming a container
+```
+docker ps
+docker rename c1-jegan container-jegan
+docker ps
+```
 
