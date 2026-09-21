@@ -186,8 +186,13 @@ hostname
 # List the file and folders
 ls -l
 
-#
+# This will exit the container shell
+# As only container shell is running in the container, once terminal exits the container also stops running (exits )
 exit
 
+# On your lab machine, is the command to list all running containers, you will not see the c1-jegan container as it already exited(stopped)
+docker ps
 
+# List all containers including exited ones
+docker ps -a
 ```
