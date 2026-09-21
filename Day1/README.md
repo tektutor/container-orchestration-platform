@@ -250,3 +250,8 @@ docker inspect -f {{.NetworkSettings.Networks.bridge.MacAddress}} c2-jegan
 <img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/0e94118e-f920-41d2-8e04-aa4e8d6bd148" />
 
 
+## Lab - Selective stopping only those container that has a substring/pattern
+```
+ docker stop $(docker ps -qf "name=jegan")
+```
+<img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/a44f35dc-1478-4508-983d-246e56e395cd" />
