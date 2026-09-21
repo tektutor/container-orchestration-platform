@@ -143,3 +143,9 @@
   - Web Services
 - anything that runs forever can be containerized
 </pre>
+
+## Info - Hypervisor High-Level Architecture
+![Hypervisor](HypervisorHighLevelArchitecture.png)
+
+## Info - Docker High-Level Architecture
+![docker](DockerHighLevelArchitecture.png)
