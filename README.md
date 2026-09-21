@@ -21,3 +21,14 @@ Hence, I would suggest you to open this Training Repository on the Cloud Machine
 <pre>
 https://forms.cloud.microsoft/r/AgYy4QLta0  
 </pre>
+
+Note
+<pre>
+- Copy/Paste is disabled between your local machine and lab machine is disabled as per your Bank policy
+- Kindly complete your pre-test and leave a message in the chat, in case you don't have chat access you 
+  can directly confirm once you have completed the test
+- Kindly provide your full name while registering for the pre-test, so that your L&D will be able to recognize you
+- Kindly do not share your BOFA ID during this training anywhere
+- Kindly do not share your screen during this training, you may inform me your Palmeto username, 
+  I'll login and help you troubleshoot the lab hands-on exercises.
+</pre>
