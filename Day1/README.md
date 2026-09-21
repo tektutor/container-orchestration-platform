@@ -163,4 +163,9 @@ newgrp docker
 docker images
 ```
 
-## Lab - Listing 
+## Lab - Listing docker images from Local Docker Registry 
+```
+docker images
+```
+<img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/cadbeff3-3028-4a9e-a197-3c1bbc98a1de" />
+
