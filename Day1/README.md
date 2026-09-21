@@ -274,3 +274,13 @@ docker rename c1-jegan container-jegan
 docker ps
 ```
 
+## Lab - Downloading image from Docker Hub
+```
+docker images
+docker pull tektutor/spring-ms:1.0
+docker images
+```
+
+<img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/957dd819-c44f-42a8-bdac-1603259665af" />
+
+
