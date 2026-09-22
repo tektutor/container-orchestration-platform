@@ -284,3 +284,8 @@ docker exec -it nginx /bin/sh
 hostname -i
 exit
 ```
+
+## Lab - Listing all the events related to your namespace
+```
+kubectl get events -n jegan
+```
