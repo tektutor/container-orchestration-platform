@@ -289,3 +289,13 @@ exit
 ```
 kubectl get events -n jegan
 ```
+
+## Lab - Editing Deployment to perform scale up/down
+```
+kubectl get pods -n jegan
+
+kubectl edit deploy/nginx
+
+# Look for replicas: 3 and replace that with 5, save and exit
+kubectl get pods -n jegan # You should see 5 pods now
+```
