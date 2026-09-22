@@ -301,6 +301,11 @@ kubectl get pods -n jegan # You should see 5 pods now
 ```
 
 ## Lab - Creating an external NodePort service for nginx deployment
+Note
+<pre>
+- Service represents a group of load-balanced pods from a single deployment
+</pre>
+
 ```
 # Find the IP address of all nodes
 kubectl get nodes -o wide
