@@ -312,3 +312,90 @@ docker images | grep tektutor
 ```
 <img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/275f76f5-1a65-4fe7-8fd4-ae8b6a471363" />
 
+## Lab - Set up a LoadBalancer with nginx
+Let's create 3 web server containers using nginx 
+```
+docker run -d --name nginx1-jegan --hostname nginx1-jegan nginx:latest
+docker run -d --name nginx2-jegan --hostname nginx2-jegan nginx:latest
+docker run -d --name nginx3-jegan --hostname nginx3-jegan nginx:latest
+```
+
+Let's create the load-balancer container with port-forwarding to make it accessible to the outside world
+```
+docker run -d --name lb-jegan --hostname lb-jegan -p 9999:80 nginx:latest
+```
+
+List all containers
+```
+docker ps
+```
+
+Customize the web pages on web server containers
+```
+echo "Welcome from Webserver 1!" > index.html
+docker cp index.html nginx1-jegan:/usr/share/nginx/html/index.html
+
+echo "Welcome from Webserver 2!" > index.html
+docker cp index.html nginx2-jegan:/usr/share/nginx/html/index.html
+
+echo "Welcome from Webserver 3!" > index.html
+docker cp index.html nginx3-jegan:/usr/share/nginx/html/index.html
+```
+
+Customize the nginx.conf on lb-container to configure it as a Load balancer
+
+We need to find the IP addresses of all web server containers
+```
+docker inspect nginx1-jegan | grep IPA
+docker exec nginx2-jegan hostname -i
+docker inspect -f {{.Networking.Networks.bridge.IPAddress}} nginx3-jegan
+```
+<img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/08c32199-b34e-4e9f-9b1a-8fc06dcd57a6" />
+
+We need to configure the lb container
+```
+
+user  nginx;
+worker_processes  auto;
+
+error_log  /var/log/nginx/error.log notice;
+pid        /run/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+http {
+    upstream myapp1 {
+        server 172.17.0.2:80;
+        server 172.17.0.3:80;
+        server 172.17.0.5:80;
+    }
+
+    server {
+        listen 80;
+
+        location / {
+            proxy_pass http://myapp1;
+        }
+    }
+}
+```
+
+Let's copy this nginx.conf file into the lb container
+```
+docker cp nginx.conf lb-jegan:/etc/nginx/nginx.conf
+```
+
+To apply the config changes, we need to restart the lb container
+```
+docker restart lb-jegan
+docker ps
+```
+
+Now you may check if the web pages are served in round-robin fashion from your lab web browser
+```
+http://localhost:8081
+```
+
