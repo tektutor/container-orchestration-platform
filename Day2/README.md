@@ -229,7 +229,7 @@ kubectl get po -n jegan
 kubectl get pods -n jegan -o wide
 ```
 
-## Lab - Understand Label Selector
+## Lab - Understanding Label Selector
 
 Note
 <pre>
