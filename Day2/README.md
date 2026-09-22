@@ -299,3 +299,27 @@ kubectl edit deploy/nginx
 # Look for replicas: 3 and replace that with 5, save and exit
 kubectl get pods -n jegan # You should see 5 pods now
 ```
+
+## Lab - Creating an external NodePort service for nginx deployment
+```
+# Find the IP address of all nodes
+kubectl get nodes -o wide
+
+# List the nginx deploy
+kubectl get deploy -n jegan
+
+# Create an external node port service
+kubectl expose deploy/nginx --n jegan --port=80
+
+# List the services
+kubectl get services -n jegan
+
+# Accessing service
+curl http://192.168.122.15:30615
+curl http://192.168.122.130:30615
+curl http://192.168.122.80:30615
+curl http://192.168.122.229:30615
+curl http://192.168.122.93:30615
+curl http://192.168.122.230:30615
+
+```
