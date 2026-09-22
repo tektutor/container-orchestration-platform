@@ -322,4 +322,7 @@ curl http://192.168.122.229:30615
 curl http://192.168.122.93:30615
 curl http://192.168.122.230:30615
 
+# Find more details about the node-port service
+kubectl describe service/nginx -n jegan
+
 ```
