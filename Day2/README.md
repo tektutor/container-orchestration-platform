@@ -228,3 +228,25 @@ kubectl get po -n jegan
 # Find the Pod IP and they are running on which node
 kubectl get pods -n jegan -o wide
 ```
+
+## Lab - Understand Label Selector
+
+Note
+<pre>
+- In Kubernetes, labels are used as selectors
+- Deployment tracks its ReplicaSets using Labels as Selectors
+- For instance, Deployment nginx has a label selector like app=nginx, the replicaset has labels app=nginx
+- Deployment Controller, if it needs to find the ReplicaSet, it will pick the label selector from Deployment and find the 
+  respective Replicaset as shown below
+</pre>
+```
+kubectl get rs -n jegan -l app=nginx
+```
+
+<pre>
+- If ReplicaSet controller, need to find the Pods, it will pick the label selector from ReplicaSet and find the respective
+  pods as shown below
+</pre>
+```
+kubectl get pods -n jegan -l app=nginx,pod-template-hash=598cc96cd9
+```
