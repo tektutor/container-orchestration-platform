@@ -229,6 +229,17 @@ kubectl get po -n jegan
 kubectl get pods -n jegan -o wide
 ```
 
+## Lab - Understanding Kubernetes describe
+Kubernetes describe is equivalent to docker inspect
+```
+kubectl describe node/master01
+kubectl describe node/worker01
+
+kubectl describe deploy/nginx
+kubectl describe rs/nginx-598cc96cd9
+kubectl describe pod/nginx-598cc96cd9-znx6s
+```
+
 ## Lab - Understanding Label Selector
 
 Note
