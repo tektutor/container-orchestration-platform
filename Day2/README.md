@@ -199,3 +199,32 @@ kubectl debug node/master01 -it --image=ubuntu --profile=sysadmin
 chroot /host
 exit
 ```
+
+## Lab - Deploying your first stateless application into Kubernetes cluster
+```
+# As a best practice, first create a namespace
+kubectl create namespace jegan
+kubectl get namespaces
+kubectl get namespace
+kubectl get ns
+
+kubectl create deployment nginx --image=nginx:latest --replicas=3 -n jegan
+
+# List the deployments i.e stateless application
+kubectl get deployments -n jegan
+kubectl get deployment -n jegan
+kubectl get deploy -n jegan
+
+# List the replicasets under jegan namespace
+kubectl get replicasets -n jegan
+kubectl get replicaset -n jegan
+kubectl get rs -n jegan
+
+# List all the pods under namespace jegan
+kubectl get pods -n jegan
+kubectl get pod -n jegan
+kubectl get po -n jegan
+
+# Find the Pod IP and they are running on which node
+kubectl get pods -n jegan -o wide
+```
