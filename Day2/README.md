@@ -91,7 +91,13 @@
 - all containers in a Pod, shares the same network, ports, IP-address
 </pre>
 
-## 
+## Info - Type of applications
+<pre>
+- Stateless
+- Stateful
+- One time Job
+- Recurring Jobs
+</pre>
 
 
 ## Info - Kubernetes High-Level Architecture
