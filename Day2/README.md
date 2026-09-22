@@ -308,6 +308,7 @@ Note
 - Service name and IP is considered stable, hence we can access a group of load-balanced pods
   via its service
 - At runtime, service will connect us with any one of the Pods from the Pod endpoint under that service
+- Kubernetes reserved port range 30000 to 32767 for the purpose of NodePort external services
 </pre>
 
 ```
