@@ -240,7 +240,8 @@ Note
   respective Replicaset as shown below
 </pre>
 ```
-kubectl get rs -n jegan -l app=nginx
+kubectl describe deploy/nginx -n jegan 
+kubectl get rs -n jegan -l app=nginx --show-labels
 ```
 
 <pre>
@@ -248,5 +249,6 @@ kubectl get rs -n jegan -l app=nginx
   pods as shown below
 </pre>
 ```
+kubectl describe rs/nginx-598cc96cd9 -n jegan --show-labels
 kubectl get pods -n jegan -l app=nginx,pod-template-hash=598cc96cd9
 ```
