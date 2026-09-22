@@ -263,3 +263,24 @@ kubectl get rs -n jegan -l app=nginx --show-labels
 kubectl describe rs/nginx-598cc96cd9 -n jegan --show-labels
 kubectl get pods -n jegan -l app=nginx,pod-template-hash=598cc96cd9
 ```
+
+## Lab - Creating Pod with plain docker
+```
+# The command below creates a pause container, the sole responsibility of this container to support networking
+docker run -d --name nginx-pause --hostname nginx registry.k8s.io/pause:3.10.1
+
+# This is an application container(web server), it joins the pause container's network, hence shares the same IP address
+docker run -d --name nginx --network=container:nginx-pause nginx:latest
+```
+
+Find the IP address of the pause container
+```
+docker inspect nginx-pause | grep IPA
+```
+
+Find the IP address of nginx container
+```
+docker exec -it nginx /bin/sh
+hostname -i
+exit
+```
