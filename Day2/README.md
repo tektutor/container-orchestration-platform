@@ -342,3 +342,11 @@ kubectl describe service/nginx -n jegan
 kubectl get pods -n jegan
 kubectl exec -it -n jegan nginx-598cc96cd9-2762n -- /bin/sh
 ```
+
+## Lab - Creating LoadBalancer external service
+```
+kubectl get deploy/nginx -n jegan
+kubectl expose deploy/nginx --type=LoadBalancer --port=80 -n jegan
+kubectl get svc/nginx -n jegan
+curl http://192.168.122.201:80
+```
