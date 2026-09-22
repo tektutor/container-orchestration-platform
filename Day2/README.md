@@ -336,3 +336,9 @@ curl http://192.168.122.230:30615
 kubectl describe service/nginx -n jegan
 
 ```
+
+## Lab - Getting inside a pod shell
+```
+kubectl get pods -n jegan
+kubectl exec -it -n jegan nginx-598cc96cd9-2762n -- /bin/sh
+```
