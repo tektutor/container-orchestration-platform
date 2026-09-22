@@ -93,10 +93,11 @@
 
 ## Info - Type of applications
 <pre>
-- Stateless
-- Stateful
-- One time Job
-- Recurring Jobs
+- Stateless ( Deployment )
+- Stateful  ( StatefulSet )
+- One time Job ( Job )
+- Recurring Jobs (CronJob)
+- Running one Pod per Node ( DaemonSet )
 </pre>
 
 
