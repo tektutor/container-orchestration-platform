@@ -183,3 +183,12 @@ kubectl version
 kubectl get nodes
 kubectl get nodes -o wide
 ```
+
+## Lab - Listing the control planes components
+```
+kubectl get pods -n kube-system
+kubectl get pods -n kube-system | grep kube-apiserver
+kubectl get pods -n kube-system | grep etcd
+kubectl get pods -n kube-system | grep kube-scheduler
+kubectl get pods -n kube-system | grep kube-controller
+```
