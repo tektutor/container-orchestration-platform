@@ -304,6 +304,10 @@ kubectl get pods -n jegan # You should see 5 pods now
 Note
 <pre>
 - Service represents a group of load-balanced pods from a single deployment
+- Every service is assigned an unique name and IP address
+- Service name and IP is considered stable, hence we can access a group of load-balanced pods
+  via its service
+- At runtime, service will connect us with any one of the Pods from the Pod endpoint under that service
 </pre>
 
 ```
