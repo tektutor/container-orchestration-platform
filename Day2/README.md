@@ -192,3 +192,10 @@ kubectl get pods -n kube-system | grep etcd
 kubectl get pods -n kube-system | grep kube-scheduler
 kubectl get pods -n kube-system | grep kube-controller
 ```
+
+## Lab - Getting inside one of the master node shell
+```
+kubectl debug node/master01 -it --image=ubuntu --profile=sysadmin
+chroot /host
+exit
+```
