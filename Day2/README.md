@@ -79,6 +79,9 @@
 - the basic build blocks required to extend K8s comes out of the box in K8s
   - Custom Resource Definitions (CRD) - we can add new type of Resource by creating CRD yaml file
   - To manage our custom resource, we also need to provide our own Controller
+- application can be deployed and managed in 2 style
+  - imperative style ( plain commands in CLI )
+  - declarative style ( yaml file - manifests )
 </pre>
 
 ## Info - Pod
