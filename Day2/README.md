@@ -175,3 +175,10 @@
 
 ## Info - Red Hat Openshift High-Level Architecture
 ![openshift](openshiftArchitecture.png)
+
+## Lab - Listing all nodes in the Kubernetes cluster
+```
+kubectl version
+
+kubectl get nodes
+```
