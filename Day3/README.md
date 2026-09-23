@@ -58,7 +58,7 @@ kubectl get svc
 kubectl describe svc/nginx
 
 # Create a test pod to try accessing the clusterip internal service
-kubectl run test --image=tektutor/spring-ms:1.0
+kubectl run test --image=tektutor/spring-ms:1.0 --port=8080
 # -w will put this command in watch mode, so you can see the pod status getting updated in real-time, to come out press Ctrl+c
 kubectl get pod -w
 
