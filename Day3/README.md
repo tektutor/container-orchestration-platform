@@ -66,6 +66,23 @@ kubectl exec -it test -- /bin/bash
 
 curl http://nginx:80
 ```
+
+## Lab - Declaratively creating NodePort external service
+Let's ensure the existing clusterip internal service is declaratively deleted
+```
+kubectl delete -f nginx-clusterip-svc.yml
+```
+
+Let's create the declarative manifest file for nodeport service
+```
+kubectl expose deploy/nginx --type=NodePort --port=80 --dry-run=client -o yaml > nginx-nodeport-svc.yml
+kubectl apply -f nginx-nodeport-svc.yml
+
+kubectl get svc
+
+curl http://192.168.122.230:31208
+```
+
 ## Lab - Declaratively deleting nginx deployment
 ```
 kubectl delete -f nginx-deploy.yml
