@@ -168,3 +168,30 @@ kubectl describe ingress/tektutor
 curl http://www.tektutor.org/nginx
 curl http://www.tektutor.org/hello
 ```
+
+## Lab - Rolling update
+```
+kubectl get deploy -n jegan
+
+cd ~/container-orchestration-platform
+git pull
+cd Day3/ingress
+# Let's delete the nginx-deploy.yml and update image version to nginx:1.29
+sed -i 's|nginx:latest|nginx:1.29|g' nginx-deploy.yml
+kubectl apply -f nginx-deploy.yml
+
+kubectl get pods -l app=nginx -o yaml | grep 1.29
+
+# Let's upgrade nginx to 1.30 version using rolling update
+sed -i 's/1.29/1.30/g' nginx-deploy.yml
+kubectl apply -f nginx-deploy.yml
+kubectl get pods -l app=nginx -o yaml | grep 1.30
+
+# Checking the status of rolling update
+kubectl rollout status deploy/nginx
+kubectl rollout history deploy/nginx
+
+# Rollback
+kubectl rollout undo deploy/nginx
+kubectl get pods -l app=nginx -o yaml | grep 1.29
+```
