@@ -201,6 +201,36 @@ crictl ps
 exit
 ```
 
+## Lab - Understanding how Pods are created by CRI-O Container Runtime
+```
+# List all pods in your namespace
+kubectl get pod nginx-598cc96cd9-2gvb5 -n jegan -o wide
+
+# In my case the nginx pod is running in master03 node, let's get inside the master03 node and hit Enter key
+kubectl debug node/master03 -it --image=ubuntu --profile=sysadmin -- chroot /host
+
+# Find the POD ID
+POD_ID=$(crictl pods --name nginx-598cc96cd9-2gvb5 --namespace jegan -q)
+
+# Find the nginx container ID
+NGINX_CONTAINER_ID=$(crictl ps --pod $POD_ID -q | head -1)
+
+# Find the network namespace - sandbox(pause) container
+NS_FILE=$(crictl inspectp $POD_ID | grep -o '/var/run/netns/[a-f0-9-]*' | head -1)
+
+# Find the nginx container's process ID as seen by the Linux OS
+NGINX_PID=$(crictl inspect $NGINX_CONTAINER_ID | grep -m1 '"pid":' | grep -o '[0-9]*')
+
+# Find the container image used to create pause container
+crictl inspectp $POD_ID | grep pause
+
+echo "Pod:       nginx-598cc96cd9-2gvb5 (namespace: jegan)"
+echo "Sandbox:   $POD_ID (image: registry.k8s.io/pause:3.10.2)"
+echo "Container: $NGINX_CONTAINER_ID (nginx, PID $NGINX_PID)"
+echo "Net NS:    $NS_FILE"
+echo "Pod IP:    $(nsenter --net=$NS_FILE ip -4 addr show eth0 | grep inet | awk '{print $2}')"
+```
+
 ## Lab - Deploying your first stateless application into Kubernetes cluster
 ```
 # As a best practice, first create a namespace
