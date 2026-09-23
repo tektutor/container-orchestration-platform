@@ -55,7 +55,16 @@ kubectl expose deploy/nginx --type=ClusterIP --port=80 --dry-run=client -o yaml 
 
 kubectl create -f nginx-clusterip-svc.yml --save-config=true
 kubectl get svc
-kubectl describe svc/nginx 
+kubectl describe svc/nginx
+
+# Create a test pod to try accessing the clusterip internal service
+kubectl run test --image=tektutor/spring-ms:1.0
+# -w will put this command in watch mode, so you can see the pod status getting updated in real-time, to come out press Ctrl+c
+kubectl get pod -w
+
+kubectl exec -it test -- /bin/bash
+
+curl http://nginx:80
 ```
 
 
