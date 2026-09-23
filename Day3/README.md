@@ -45,7 +45,20 @@ kubectl config view --minify | grep namespace
 
 ## Lab - Declaratively creating ClusterIP Internal Service
 ```
+# Ensure you are in your namespace
+kubectl config view --minify | grep namespace
+
+kubectl get deploy
+
+kubectl expose deploy/nginx --type=ClusterIP --port=80 --dry-run=client -o json
+kubectl expose deploy/nginx --type=ClusterIP --port=80 --dry-run=client -o yaml > nginx-clusterip-svc.yml
+
+kubectl create -f nginx-clusterip-svc.yml --save-config=true
+kubectl get svc
+kubectl describe svc/nginx 
 ```
+
+
 
 ## Lab - Declaratively deleting nginx deployment
 ```
