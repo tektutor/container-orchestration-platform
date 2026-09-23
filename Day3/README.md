@@ -117,4 +117,8 @@ kubectl get deploy,rs,po
   - Ingress ( this one we define )
   - Ingress Controller ( k8s cluster supports it - must be installed & configured by Administrator )
   - Load Balancer ( Depending on what Load Balancer your k8s administrator has installed, the Ingress must ask for one that is supported )
+- it is used to integrate multiple services
+- Just like Services has pods as backend, Ingress has Services as backends
+- Behind an Ingress, there can be multiple Services ( ClusterIP, NodePort, LoadBalancer )
+- it provides a user-friendly public url to access the application externally ( outside the k8s cluster )
 </pre>
