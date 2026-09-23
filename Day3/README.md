@@ -104,3 +104,17 @@ kubectl delete -f nginx-deploy.yml
 kubectl get deploy,rs,po
 ```
 
+## Info - Ingress
+<pre>
+- Ingress is not a service
+- Ingress is a set of forwarding rules
+- We define the Ingress rules, these rules are picked up by Ingress Controller in the K8s Cluster,
+  it then configures the LoadBalancer (HAProxy, Nginx, etc)
+- IngressController doesn't come out of the box in an on-prem(baremetal) k8s cluster setup, your
+  k8s adminstrator should have installed and configured it, only then the Ingress rules will be picked
+  and configured in the load balancer
+- Three important components
+  - Ingress ( this one we define )
+  - Ingress Controller ( k8s cluster supports it - must be installed & configured by Administrator )
+  - Load Balancer ( Depending on what Load Balancer your k8s administrator has installed, the Ingress must ask for one that is supported )
+</pre>
