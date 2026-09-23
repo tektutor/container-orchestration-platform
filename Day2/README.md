@@ -230,6 +230,7 @@ echo "Container: $NGINX_CONTAINER_ID (nginx, PID $NGINX_PID)"
 echo "Net NS:    $NS_FILE"
 echo "Pod IP:    $(nsenter --net=$NS_FILE ip -4 addr show eth0 | grep inet | awk '{print $2}')"
 ```
+<img width="1332" height="3648" alt="image" src="https://github.com/user-attachments/assets/5cbcfff7-baa7-43bc-b998-a9f53e36551c" />
 
 ## Lab - Deploying your first stateless application into Kubernetes cluster
 ```
