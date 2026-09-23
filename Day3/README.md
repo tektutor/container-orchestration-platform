@@ -23,10 +23,34 @@ kubectl create deployment nginx --image=nginx:latest --replicas=3 --dry-run=clie
 kubectl create deployment nginx --image=nginx:latest --replicas=3 --dry-run=client -o yaml > nginx-deploy.yml
 
 # Create nginx deployment in declarative style
+# First time this should be used
 kubectl create -f nginx-deploy.yml --save-config=true
 
 # Let's say we made some delta changes like we updated the replicas from 3 to 5 pods
+# Subsequent times - second time onwards this is the recommended approach
 kubectl apply -f nginx-deploy.yml
 
 kubectl get deploy,rs,po
 ```
+
+## Lab - Moving to a specific namespace to avoid repeatedly mentioning namespace for each command
+```
+kubectl config set-context --current --namespace=jegan
+```
+
+Checking the current namespace
+```
+kubectl config view --minify | grep namespace
+```
+
+## Lab - Declaratively creating ClusterIP Internal Service
+```
+```
+
+## Lab - Declaratively deleting nginx deployment
+```
+kubectl delete -f nginx-deploy.yml
+kubectl get deploy,rs,po
+```
+
+## Lab - 
