@@ -38,7 +38,7 @@ kubectl get deploy,rs,po
 kubectl config set-context --current --namespace=jegan
 ```
 
-Checking the current namespace
+Checking the current namespace, minify shows the current context
 ```
 kubectl config view --minify | grep namespace
 ```
