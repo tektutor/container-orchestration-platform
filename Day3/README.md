@@ -83,10 +83,24 @@ kubectl get svc
 curl http://192.168.122.230:31208
 ```
 
+## Lab - Declaratively creating loadbalancer service
+```
+# First delete the nodeport service
+kubectl delete -f nginx-nodeport-svc.yml
+
+# Create the loadbalancer service
+kubectl expose deploy/nginx --type=LoadBalancer --port=80 --dry-run=client -o yaml > nginx-lb-svc.yml
+kubectl apply -f nginx-lb-svc.yml
+kubectl get svc
+kuebctl describe svc/nginx
+
+# Test
+curl http://192.168.122.201:80
+```
+
 ## Lab - Declaratively deleting nginx deployment
 ```
 kubectl delete -f nginx-deploy.yml
 kubectl get deploy,rs,po
 ```
 
-## Lab - 
