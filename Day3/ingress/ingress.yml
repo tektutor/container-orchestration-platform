@@ -13,7 +13,7 @@ spec:
             service:
               name: nginx
               port:
-                number: 8080
+                number: 80
           path: /nginx
           pathType: Prefix
 
@@ -21,6 +21,6 @@ spec:
             service:
               name: hello 
               port:
-                number: 8080
+                number: 80
           path: /hello
           pathType: Prefix
