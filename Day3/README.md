@@ -165,6 +165,6 @@ kubectl apply -f ingress.yml
 
 kubectl get ingress
 kubectl describe ingress/tektutor
-curl http://tektutor/nginx
-curl http://tektutor/hello
+curl http://www.tektutor.org/nginx
+curl http://www.tektutor.org/hello
 ```
