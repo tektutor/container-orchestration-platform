@@ -66,9 +66,6 @@ kubectl exec -it test -- /bin/bash
 
 curl http://nginx:80
 ```
-
-
-
 ## Lab - Declaratively deleting nginx deployment
 ```
 kubectl delete -f nginx-deploy.yml
