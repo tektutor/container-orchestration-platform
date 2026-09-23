@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx
+  name: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - image: image-registry.openshift-image-registry.svc:5000/openshift/bitnami-nginx:1.28 
+        name: nginx
+        imagePullPolicy: IfNotPresent
