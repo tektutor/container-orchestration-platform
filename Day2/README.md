@@ -176,7 +176,7 @@
 <pre>
 - Each master nodes has its own dedicated etcd database
 - etcd database works as a cluster
-- it is always recommended to go for odd numbered etcd instances i.e 1, 3, 5, 7
+- it is always recommended to go for an odd numbered etcd instances in an etcd cluster i.e 1, 3, 5, 7, etc.,
 - etcd uses the Raft consensus algorithm to replicate its data across all master nodes
 - Total nodes/2 - should be rounded down i.e 1.5 rounds to 1, 2.5 rounds to 2
 - Quorum needed = ( Total nodes in cluster /  2 ) + 1
