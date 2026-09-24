@@ -170,6 +170,43 @@
   - StatefulSet Controller takes StatefulSet as input and manages Pods
 </pre>
 
+## Info - How many masters nodes are recommended in K8s/Openshift ?
+<pre>
+- Each master nodes has its own dedicated etcd database
+- etcd database works as a cluster
+- it is always recommended to go for odd numbered etcd instances i.e 1, 3, 5, 7
+- etcd uses the Raft consensus algorithm to replicate its data across all master nodes
+- Total nodes/2 - should be rounded down i.e 1.5 rounds to 1, 2.5 rounds to 2
+- Quorum needed = ( Total nodes in cluster /  2 ) + 1
+- in the etcd cluster, only one etcd acts as a leader which performs write operation, 
+  unless the majority of the total etcd instances confirms(agrees) the leader etcd will not write the data
+  - in a single node cluster, there is only 1 etcd so the quorum agreed, the same etcd agrees to all writes so no problem
+  - in a cluster with 2 nodes, the quorum requires at least 2 majority, so when both nodes are live everything works fine,
+    when 1 goes down, the majority 2 quorum requirement will never be met, so no writes are approved, in a 2 node cluster
+    there is 0 tolerance of etcd
+  - in a cluster with 3 nodes
+    - the quorum requires at least 2 majority
+    - when the leader etcd writes, the leader etcd instance and 1 other etcd approves the write operation we are good
+    - when 1 of the 3 etcd instances goes down, the quorum is still 2 majority so the tolerance is 1 node can go down, still
+      the cluster goes on
+    - when 2 etcd instances goes down, the cluster becomes nonoperational
+  - in a cluster with 4 nodes
+    - the quorum requires atleast 3 etcd instances
+    - tolerance is 1, just like 3 nodes, having an extra etcd instance is of no advantage, it only adds overhead in synchronizing data
+    - when 1 etcd instance goes down, the cluster works fine as the quorum requirement 3 majority is met
+    - when 2 etcd instances goes down, the cluster will not work as the quorum requirement 3 majority is not met
+  - in a cluster with 5 nodes
+    - the quorum requires atleast 3 etcd instances running healthy
+    - when all 5 etcd runs healthy, cluster works fine
+    - when 1 etcd goes down, the quorum requirement 3 is still met, so cluster works fine
+    - when 2 etcd goes down, the quorum requirement 3 is still met, so cluster works fine
+    - when 3 etcd instances goes down, the quorum requirement of 3 majority will not be met, so cluster will become non-operational
+- this explains, why odd numbered etcd instance clusters are recommended over the even numbered etcd cluster
+- the even numbered clusters provides the same level of tolerance an odd number cluster offers with one less number of etcd instances
+- actually there will be an additional overhead drawback in case of even numbered etcd cluster as too many etcd instances, makes the
+  data synchronization more complex
+</pre>
+
 ## Info - Kubernetes High-Level Architecture
 ![kubernetes](KubernetesArchitecture2.png)
 
