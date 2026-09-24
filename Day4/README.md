@@ -38,4 +38,18 @@ cd Day4/wordpress-with-configmaps-and-secrets
 # Find and replace 'jegan' with yout name
 # Update the server IP to 192.168.2.201 in case you are working in second server
 # In the mysql-pv.yml and wordpress-pv.yml, update the path by checking folders reserved for you using showmount -e | grep jegan
+
+./deploy.sh
+
+kubectl get pv,pvc
+
+kubectl get pods -w
+
+# look for ready for connections
+kubectl logs mysql-6d797f49d7-2tzh4
+
+kubectl get svc
+
+# From lab machine web browser, you need substitute the IP based on your external IP reported by the service
+http://192.168.122.201:80
 ```
