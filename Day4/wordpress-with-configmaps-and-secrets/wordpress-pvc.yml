@@ -1,11 +1,12 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: wordpress-pvc-sriram  # Replace 'sriram' with your name
+  name: wordpress-pvc-jegan  # Replace 'jegan' with your name
 spec:
+  storageClassName: nfs-storage
   selector:
     matchLabels:
-      name: sriram  # Replace 'sriram' with your name
+      name: jegan  # Replace 'jegan' with your name
   accessModes:
   - ReadWriteOnce
   volumeMode: Filesystem
