@@ -1,12 +1,16 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: tektutor
+  name: palmeto 
   annotations:
-    haproxy.router.openshift.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false" 
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m" 
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120" 
 spec:
+  ingressClassName: nginx
   rules:
-    - host: tektutor
+    - host: www.tektutor.org 
       http:
         paths:
         - backend:
@@ -21,6 +25,6 @@ spec:
             service:
               name: hello 
               port:
-                number: 80
+                number: 8080
           path: /hello
           pathType: Prefix

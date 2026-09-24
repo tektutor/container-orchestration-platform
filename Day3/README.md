@@ -122,3 +122,76 @@ kubectl get deploy,rs,po
 - Behind an Ingress, there can be multiple Services ( ClusterIP, NodePort, LoadBalancer )
 - it provides a user-friendly public url to access the application externally ( outside the k8s cluster )
 </pre>
+
+
+## Lab  - Ingress
+
+Let's deploy 2 applications
+
+Clone the TekTutor Training Repository if you haven't done it already
+```
+cd ~
+git clone https://github.com/tektutor/container-orchestration-platform.git
+```
+
+Our first application is going to be nginx
+```
+cd ~/container-orchestration-platform
+git pull
+cd Day3/ingress
+cat nginx-deploy.yml
+kubectl apply -f nginx-deploy.yml
+kubectl apply -f nginx-svc.yml
+```
+
+OUr second application is going to hello springboot sample microservice
+```
+cat hello-deploy.yml
+kubectl apply -f hello-deploy.yml
+kubectl apply -f hello-svc.yml
+```
+
+List and see if both deployments and services are created as expected
+```
+kubectl get deploy,pods, svc
+kubectl describe svc/nginx
+kubectl describe svc/hello
+```
+
+Let's create the ingress that integrates the above two services
+```
+cat ingress.yml
+kubectl apply -f ingress.yml
+
+kubectl get ingress
+kubectl describe ingress/tektutor
+curl http://www.tektutor.org/nginx
+curl http://www.tektutor.org/hello
+```
+
+## Lab - Rolling update
+```
+kubectl get deploy -n jegan
+
+cd ~/container-orchestration-platform
+git pull
+cd Day3/ingress
+# Let's delete the nginx-deploy.yml and update image version to nginx:1.29
+sed -i 's|nginx:latest|nginx:1.29|g' nginx-deploy.yml
+kubectl apply -f nginx-deploy.yml
+
+kubectl get pods -l app=nginx -o yaml | grep 1.29
+
+# Let's upgrade nginx to 1.30 version using rolling update
+sed -i 's/1.29/1.30/g' nginx-deploy.yml
+kubectl apply -f nginx-deploy.yml
+kubectl get pods -l app=nginx -o yaml | grep 1.30
+
+# Checking the status of rolling update
+kubectl rollout status deploy/nginx
+kubectl rollout history deploy/nginx
+
+# Rollback
+kubectl rollout undo deploy/nginx
+kubectl get pods -l app=nginx -o yaml | grep 1.29
+```
