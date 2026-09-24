@@ -11,4 +11,3 @@ oc apply -f wordpress-pv.yml
 oc apply -f wordpress-pvc.yml
 oc apply -f wordpress-deploy.yml
 oc apply -f wordpress-svc.yml
-oc apply -f wordpress-route.yml
