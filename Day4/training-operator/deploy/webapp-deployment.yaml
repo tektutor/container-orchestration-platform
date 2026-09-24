@@ -1,0 +1,62 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: training-webapp
+  namespace: jegan
+  labels:
+    app: training-webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: training-webapp
+  template:
+    metadata:
+      labels:
+        app: training-webapp
+    spec:
+      containers:
+        - name: webapp
+          image: docker.io/tektutor/training-webapp:latest
+          imagePullPolicy: IfNotPresent 
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_PATH
+              value: /data/trainings.db
+          volumeMounts:
+            - name: db-volume
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /api/trainings
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      volumes:
+        - name: db-volume
+          persistentVolumeClaim:
+            claimName: training-db-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: training-webapp
+  namespace: jegan
+spec:
+  selector:
+    app: training-webapp
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080
+  type: NodePort

@@ -1,0 +1,46 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: training-controller
+  namespace: jegan
+  labels:
+    app: training-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: training-controller
+  template:
+    metadata:
+      labels:
+        app: training-controller
+    spec:
+      serviceAccountName: training-controller
+      containers:
+        - name: controller
+          image: docker.io/tektutor/training-controller:latest
+          imagePullPolicy: IfNotPresent 
+          env:
+            - name: DB_PATH
+              value: /data/trainings.db
+          volumeMounts:
+            - name: db-volume
+              mountPath: /data
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      volumes:
+        - name: db-volume
+          persistentVolumeClaim:
+            claimName: training-db-pvc

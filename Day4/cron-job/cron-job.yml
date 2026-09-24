@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-job
+spec:
+  #schedule: "00 12 7 8 *" #CRON schedule - will run every year at 12:00 pm on Thursday, 27th June 
+  schedule: "*/2 * * * *" #CRON schedule - will run every 2 minutes 
+  timeZone: "Asia/Calcutta"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 3600 # delete each job 1h after it finishes
+      template:
+        spec:
+          containers:
+          - name: my-cron-container
+            image: alpine:latest
+            command: ["sh", "-c", "echo Hello"]
+          restartPolicy: OnFailure

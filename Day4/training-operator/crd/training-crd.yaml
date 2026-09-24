@@ -1,0 +1,79 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: trainings.tektutor.org
+spec:
+  group: tektutor.org
+  names:
+    kind: Training
+    listKind: TrainingList
+    plural: trainings
+    singular: training
+    shortNames:
+      - tr
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - trainingName
+                - duration
+                - fromDate
+                - toDate
+                - mode
+              properties:
+                trainingName:
+                  type: string
+                  description: "Name of the training course"
+                duration:
+                  type: integer
+                  description: "Duration in days"
+                fromDate:
+                  type: string
+                  description: "Start date in YYYY-MM-DD format"
+                toDate:
+                  type: string
+                  description: "End date in YYYY-MM-DD format"
+                mode:
+                  type: string
+                  enum:
+                    - Online
+                    - Classroom
+                  description: "Delivery mode - Online or Classroom"
+            status:
+              type: object
+              properties:
+                state:
+                  type: string
+                message:
+                  type: string
+                dbRecordId:
+                  type: integer
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Training
+          type: string
+          jsonPath: .spec.trainingName
+        - name: Duration
+          type: integer
+          jsonPath: .spec.duration
+        - name: From
+          type: string
+          jsonPath: .spec.fromDate
+        - name: To
+          type: string
+          jsonPath: .spec.toDate
+        - name: Mode
+          type: string
+          jsonPath: .spec.mode
+        - name: Status
+          type: string
+          jsonPath: .status.state

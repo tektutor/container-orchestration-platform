@@ -1,0 +1,221 @@
+################################################################################
+# MySQL on OpenShift: 3-pod StatefulSet, static NFS volumes, GTID replication.
+#
+# Topology: mysql-0 is the primary (read/write). mysql-1 and mysql-2 are
+# read-only replicas that pull every write from mysql-0 using GTID
+# auto-positioning. The StatefulSet supplies stable names and per-pod NFS
+# storage; MySQL itself does the data synchronization.
+#
+# Self-contained: a clean `oc apply -f` brings the cluster up already
+# replicating, with no manual steps. The setup sidecar runs on every pod and
+# every boot, so it does not depend on a first-boot-only init (which fails when
+# the NFS export already holds data).
+#
+# EDIT before applying: NFS server + export paths, and the passwords
+# (move them into a Secret for anything beyond a lab).
+################################################################################
+---
+# ---- Three static NFS PersistentVolumes, one per pod ----
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-nfs-0
+  labels: { app: mysql }
+spec:
+  capacity: { storage: 100Mi }
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs
+  nfs:
+    server: 192.168.2.200        # EDIT: your NFS server
+    path: /var/nfs/jegan/mysql-0       # EDIT: a distinct, empty export per pod
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-nfs-1
+  labels: { app: mysql }
+spec:
+  capacity: { storage: 100Mi }
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs
+  nfs:
+    server: 192.168.2.200        # EDIT
+    path: /var/nfs/jegan/mysql-1       # EDIT
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-nfs-2
+  labels: { app: mysql }
+spec:
+  capacity: { storage: 100Mi }
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs
+  nfs:
+    server: 192.168.2.200        # EDIT
+    path: /var/nfs/jegan/mysql-2       # EDIT
+---
+# ---- Config fragment + the single setup script (handles both roles) ----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql
+  labels: { app: mysql }
+data:
+  common.cnf: |
+    [mysqld]
+    gtid_mode=ON
+    enforce_gtid_consistency=ON
+    binlog_format=ROW
+  # Runs in a sidecar on every pod, every start. The pod's ordinal decides its
+  # role: ordinal 0 is the primary and creates the replication user; the others
+  # wait for that user, then start replicating. Everything here is idempotent,
+  # so restarts are safe.
+  setup.sh: |
+    #!/bin/bash
+    set -e
+    [[ "$HOSTNAME" =~ -([0-9]+)$ ]]
+    ordinal=${BASH_REMATCH[1]}
+    M="mysql --get-server-public-key -h127.0.0.1 -uroot -p$MYSQL_ROOT_PASSWORD"
+
+    # Wait for the local mysqld to accept connections (every pod).
+    until $M -e 'SELECT 1' &>/dev/null; do
+      echo "waiting for local mysqld..."; sleep 3
+    done
+
+    if [[ "$ordinal" -eq 0 ]]; then
+      # Primary: make sure the replication user exists. Created with the 8.4
+      # default plugin (caching_sha2_password); no deprecated native password.
+      $M -e "
+        CREATE USER IF NOT EXISTS 'repl'@'%' IDENTIFIED BY 'replpass';
+        GRANT REPLICATION SLAVE ON *.* TO 'repl'@'%';
+        FLUSH PRIVILEGES;"
+      echo "primary ready"
+    else
+      # Replica: wait until the primary accepts the repl user, then replicate.
+      # --get-server-public-key lets caching_sha2_password auth work over the
+      # non-TLS link; GET_SOURCE_PUBLIC_KEY=1 does the same for the I/O thread.
+      until mysql --get-server-public-key -hmysql-0.mysql -urepl -preplpass \
+            -e 'SELECT 1' &>/dev/null; do
+        echo "waiting for primary mysql-0..."; sleep 3
+      done
+      $M -e "
+        STOP REPLICA;
+        CHANGE REPLICATION SOURCE TO
+          SOURCE_HOST='mysql-0.mysql',
+          SOURCE_USER='repl',
+          SOURCE_PASSWORD='replpass',
+          SOURCE_AUTO_POSITION=1,
+          GET_SOURCE_PUBLIC_KEY=1;
+        START REPLICA;
+        SET GLOBAL super_read_only=ON;"
+      echo "replication started"
+    fi
+    exec sleep infinity
+---
+# ---- Headless Service: stable per-pod DNS (mysql-0.mysql, mysql-1.mysql, ...) ----
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  labels: { app: mysql }
+spec:
+  clusterIP: None
+  selector: { app: mysql }
+  ports:
+    - { name: mysql, port: 3306 }
+---
+# ---- Read Service: load-balances connections across all three pods ----
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-read
+  labels: { app: mysql }
+spec:
+  selector: { app: mysql }
+  ports:
+    - { name: mysql, port: 3306 }
+---
+# ---- The StatefulSet ----
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  labels: { app: mysql }
+spec:
+  serviceName: mysql
+  replicas: 3
+  selector:
+    matchLabels: { app: mysql }
+  template:
+    metadata:
+      labels: { app: mysql }
+    spec:
+      initContainers:
+        # Give each pod a unique server-id and the shared GTID config.
+        - name: init-config
+          image: mysql:8.4
+          command:
+            - bash
+            - -c
+            - |
+              set -e
+              [[ "$HOSTNAME" =~ -([0-9]+)$ ]]
+              ordinal=${BASH_REMATCH[1]}
+              printf '[mysqld]\nserver-id=%d\n' $((100 + ordinal)) > /etc/mysql/conf.d/server-id.cnf
+              cp /mnt/config-map/common.cnf /etc/mysql/conf.d/common.cnf
+          volumeMounts:
+            - { name: conf, mountPath: /etc/mysql/conf.d }
+            - { name: config-map, mountPath: /mnt/config-map }
+      containers:
+        - name: mysql
+          image: mysql:8.4
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: rootpass            # EDIT: use a Secret
+          ports:
+            - { name: mysql, containerPort: 3306 }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/mysql }
+            - { name: conf, mountPath: /etc/mysql/conf.d }
+          readinessProbe:
+            exec:
+              command: ["bash", "-c", "mysqladmin ping -uroot -p$MYSQL_ROOT_PASSWORD"]
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["bash", "-c", "mysqladmin ping -uroot -p$MYSQL_ROOT_PASSWORD"]
+            initialDelaySeconds: 45
+            periodSeconds: 15
+        # Sidecar: creates the repl user on the primary, configures replication
+        # on the replicas. Self-selects its role from the pod ordinal.
+        - name: setup
+          image: mysql:8.4
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: rootpass            # EDIT: match above / use a Secret
+          command: ["bash", "/scripts/setup.sh"]
+          volumeMounts:
+            - { name: scripts, mountPath: /scripts }
+      volumes:
+        - name: conf
+          emptyDir: {}
+        - name: config-map
+          configMap: { name: mysql }
+        - name: scripts
+          configMap:
+            name: mysql
+            items:
+              - { key: setup.sh, path: setup.sh }
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: nfs
+        resources:
+          requests: { storage: 100Mi }

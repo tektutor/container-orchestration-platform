@@ -1,0 +1,41 @@
+---
+# Example 1 - Online training
+apiVersion: tektutor.org/v1
+kind: Training
+metadata:
+  name: openshift-fundamentals
+  namespace: jegan
+spec:
+  trainingName: "OpenShift Fundamentals"
+  duration: 5
+  fromDate: "2026-07-07"
+  toDate:   "2026-07-11"
+  mode: Online
+
+---
+# Example 2 - Classroom training
+apiVersion: tektutor.org/v1
+kind: Training
+metadata:
+  name: kubernetes-advanced
+  namespace: jegan
+spec:
+  trainingName: "Kubernetes Advanced"
+  duration: 3
+  fromDate: "2026-07-14"
+  toDate:   "2026-07-16"
+  mode: Classroom
+
+---
+# Example 3 - Another online batch
+apiVersion: tektutor.org/v1
+kind: Training
+metadata:
+  name: devops-cicd-pipeline
+  namespace: jegan
+spec:
+  trainingName: "DevOps CI/CD Pipeline"
+  duration: 4
+  fromDate: "2026-07-21"
+  toDate:   "2026-07-24"
+  mode: Online

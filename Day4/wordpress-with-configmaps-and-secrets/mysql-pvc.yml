@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc-sriram  # Replace 'sriram' with your name
+spec:
+  selector:
+    matchLabels:
+      name: sriram  # Replace 'sriram' with your name
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 100Mi

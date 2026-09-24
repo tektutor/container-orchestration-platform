@@ -1,0 +1,45 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: training-controller
+  namespace: jegan
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: training-controller-role
+rules:
+  # Watch and manage Training CRs
+  - apiGroups: ["tektutor.org"]
+    resources: ["trainings", "trainings/status"]
+    verbs: ["get", "list", "watch", "patch", "update"]
+
+  # kopf needs these to manage its own internal state (leases, events)
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+  # kopf peering (optional but recommended for HA)
+  - apiGroups: ["kopf.dev"]
+    resources: ["clusterkopfpeerings"]
+    verbs: ["get", "list", "watch", "patch", "update"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: training-controller-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: training-controller-role
+subjects:
+  - kind: ServiceAccount
+    name: training-controller
+    namespace: jegan

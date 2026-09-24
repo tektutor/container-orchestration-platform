@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: wordpress-pv-sriram # Replace 'sriram' with your name
+  labels:
+    name: sriram  # Replace 'sriram' with your name
+spec:
+  capacity:
+    storage: 100Mi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce  # All the pods from one node in the openshift cluster can read & write this external storage
+  persistentVolumeReclaimPolicy: Retain
+
+  nfs:
+    server: 192.168.2.200  # In case you are working on second server, you need to change this to 192.168.2.201
+    path: /var/nfs/sriram/wordpress  # Replace sriram with your linux user
