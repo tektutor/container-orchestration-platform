@@ -27,3 +27,15 @@
 - If Kubernetes cluster is able to find an exact matching PV, it will then let the PVC go and claim it before 
   the application can use it
 </pre>
+
+## Lab - Deploying multi-pod wordpress and mysql that uses external persistent volumes
+```
+cd ~/container-orchestration-platform
+git pull
+cd Day4/wordpress-with-configmaps-and-secrets
+
+# Edit mysql-pv.yml, mysql-pvc.yml, mysql-deploy.yml, wordpress-pv.yml, wordpress.pyc.yml, wordpress-deploy.yml
+# Find and replace 'jegan' with yout name
+# Update the server IP to 192.168.2.201 in case you are working in second server
+# In the mysql-pv.yml and wordpress-pv.yml, update the path by checking folders reserved for you using showmount -e | grep jegan
+```
