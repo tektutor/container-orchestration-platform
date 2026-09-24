@@ -1,10 +1,11 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: wordpress-pv-sriram # Replace 'sriram' with your name
+  name: wordpress-pv-jegan # Replace 'jegan' with your name
   labels:
-    name: sriram  # Replace 'sriram' with your name
+    name: jegan  # Replace 'jegan' with your name
 spec:
+  storageClassName: nfs-storage
   capacity:
     storage: 100Mi
   volumeMode: Filesystem
@@ -14,4 +15,4 @@ spec:
 
   nfs:
     server: 192.168.2.200  # In case you are working on second server, you need to change this to 192.168.2.201
-    path: /var/nfs/sriram/wordpress  # Replace sriram with your linux user
+    path: /var/nfs/jegan/folder5 # Replace jegan with your linux user
