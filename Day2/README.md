@@ -180,10 +180,12 @@
 - Quorum needed = ( Total nodes in cluster /  2 ) + 1
 - in the etcd cluster, only one etcd acts as a leader which performs write operation, 
   unless the majority of the total etcd instances confirms(agrees) the leader etcd will not write the data
-  - in a single node cluster, there is only 1 etcd so the quorum agreed, the same etcd agrees to all writes so no problem
-  - in a cluster with 2 nodes, the quorum requires at least 2 majority, so when both nodes are live everything works fine,
-    when 1 goes down, the majority 2 quorum requirement will never be met, so no writes are approved, in a 2 node cluster
-    there is 0 tolerance of etcd
+  - in a single node cluster, there is only 1 etcd so the quorum agrees always, the same etcd agrees to 
+    all writes so no problem
+  - in a cluster with 2 master nodes, the quorum requires at least 2 majority, so when both master nodes are 
+    live everything works fine,
+    when 1 goes down, the majority 2 quorum requirement will never be met, so no writes are approved, 
+    in a 2 node cluster there is 0 tolerance of etcd
   - in a cluster with 3 nodes
     - the quorum requires at least 2 majority
     - when the leader etcd writes, the leader etcd instance and 1 other etcd approves the write operation we are good
