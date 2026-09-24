@@ -17,24 +17,24 @@ spec:
       volumes:
       - name: mysql-storage
         persistentVolumeClaim:
-          claimName: mysql-pvc-sriram  #Replace 'sriram' with your name
+          claimName: mysql-pvc-jegan  #Replace 'jegan' with your name
       containers:
       - name: mysql
-        image: image-registry.openshift-image-registry.svc:5000/openshift/bitnami-mysql:latest
+        image: mysql:latest
         imagePullPolicy: IfNotPresent
 
         volumeMounts:
         - name: mysql-storage
-          mountPath: /bitnami/mariadb/data
+          mountPath: /var/lib/mysql
 
         env:
-        - name: MARIADB_ROOT_PASSWORD 
+        - name: MYSQL_ROOT_PASSWORD 
           valueFrom: 
              secretKeyRef:
                name: wordpress-login-credentials
                key: password
 
-        - name: MARIADB_DATABASE
+        - name: MYSQL_DATABASE
           valueFrom: 
              configMapKeyRef:
                name: wordpress-cm
