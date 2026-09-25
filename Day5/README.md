@@ -347,7 +347,7 @@ A JSON Web Token (JWT) has three base64url-encoded parts separated by dots
 - Only the private key holder can create a valid signature
 </pre>
 
-Replace `jegan` with your own name in every command, for example `uday-shop`.
+Replace `jegan` with your own name in every command, for example `uday-shop`
 
 Let's create a project
 ```
