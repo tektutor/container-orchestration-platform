@@ -347,37 +347,180 @@ A JSON Web Token (JWT) has three base64url-encoded parts separated by dots
 - Only the private key holder can create a valid signature
 </pre>
 
+Replace `jegan` with your own name in every command, for example `uday-shop`.
+
 Let's create a project
 ```
-oc new-project jegan-jwt-lab
-oc create serviceaccount jegan-demo-sa
+oc new-project jegan-shop
+oc create serviceaccount inventory-api -n jegan-shop
+oc create serviceaccount order-service -n jegan-shop
+oc adm policy add-cluster-role-to-user system:auth-delegator -z inventory-api -n jegan-shop
 ```
 
-kube-root-ca.crt ConfigMap with the CAs that sign the API server certificates
+Deploy inventory-api - a small Python server that sends a TokenReview for every request
 ```
-mkdir -p ~/jwt-lab && cd ~/jwt-lab
-API=$(oc whoami --show-server)
-echo "$API"
-oc get configmap kube-root-ca.crt -n jwt-lab \
--o jsonpath='{.data.ca\.crt}' > api-ca.crt
-curl -s --cacert api-ca.crt "$API/version" | head -5
+cat <<'EOF' | oc apply -n jegan-shop -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inventory-api-code
+data:
+  server.py: |
+    import json, ssl, urllib.request
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    SA = "/var/run/secrets/kubernetes.io/serviceaccount/"
+    NAMESPACE = open(SA + "namespace").read().strip()
+    ALLOWED = "system:serviceaccount:%s:order-service" % NAMESPACE
+    CTX = ssl.create_default_context(cafile=SA + "ca.crt")
+
+    def who_is(token):
+        # Ask the API server: who owns this token, and is it meant for us?
+        body = json.dumps({
+            "apiVersion": "authentication.k8s.io/v1",
+            "kind": "TokenReview",
+            "spec": {"token": token, "audiences": ["inventory-api"]},
+        }).encode()
+        req = urllib.request.Request(
+            "https://kubernetes.default.svc/apis/authentication.k8s.io/v1/tokenreviews",
+            data=body, method="POST",
+            headers={"Content-Type": "application/json",
+                     "Authorization": "Bearer " + open(SA + "token").read().strip()})
+        with urllib.request.urlopen(req, context=CTX) as r:
+            return json.load(r)["status"]
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            auth = self.headers.get("Authorization", "")
+            status = who_is(auth[7:]) if auth.startswith("Bearer ") else {}
+            user = status.get("user", {}).get("username", "")
+            if not status.get("authenticated"):
+                code, msg = 401, "rejected: unknown caller\n"
+            elif user != ALLOWED:
+                code, msg = 403, "rejected: %s is not allowed\n" % user
+            else:
+                code, msg = 200, "stock reserved for %s\n" % user
+            self.send_response(code)
+            self.end_headers()
+            self.wfile.write(msg.encode())
+
+    HTTPServer(("", 8080), Handler).serve_forever()
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: inventory-api
+  labels:
+    app: inventory-api
+spec:
+  serviceAccountName: inventory-api
+  containers:
+  - name: app
+    image: registry.access.redhat.com/ubi9/python-311
+    command: ["python3", "-u", "/app/server.py"]
+    ports:
+    - containerPort: 8080
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+    volumeMounts:
+    - name: code
+      mountPath: /app
+  volumes:
+  - name: code
+    configMap:
+      name: inventory-api-code
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-api
+spec:
+  selector:
+    app: inventory-api
+  ports:
+  - port: 8080
+EOF
+
+oc wait --for=condition=Ready pod/inventory-api -n jegan-shop --timeout=300s
 ```
 
-Let's test the helper tool
+Deploy order-service with a token meant for inventory-api
 ```
-cd ~/container-orchestration-platform
-git pull
-cd Day5/jwt-lab
-cat jwt_tool.py
+cat <<'EOF' | oc apply -n jegan-shop -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: order-service
+spec:
+  serviceAccountName: order-service
+  containers:
+  - name: app
+    image: registry.access.redhat.com/ubi9/ubi-minimal
+    command: ["tail", "-f", "/dev/null"]
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+    volumeMounts:
+    - name: inventory-token
+      mountPath: /var/run/secrets/tokens
+      readOnly: true
+  volumes:
+  - name: inventory-token
+    projected:
+      sources:
+      - serviceAccountToken:
+          audience: inventory-api
+          expirationSeconds: 600
+          path: inventory-api-token
+EOF
 
-# Expected to print usage details
-python3 ./jwt_tool.py
+oc wait --for=condition=Ready pod/order-service -n jegan-shop --timeout=120s
 ```
 
-OAuth user tokens are not JWTs
+order-service calls inventory-api (allowed)
 ```
-oc login -u uday -p 'palmeto@123' \
---insecure-skip-tls-verify=true "$API"
-USER_TOKEN=$(KUBECONFIG=~/.kube/uday oc whoami -t)
-echo "$USER_TOKEN"
+oc exec -n jegan-shop order-service -- sh -c \
+  'curl -s -H "Authorization: Bearer $(cat /var/run/secrets/tokens/inventory-api-token)" http://inventory-api:8080/'
+```
+Expected
+<pre>
+stock reserved for system:serviceaccount:jegan-shop:order-service
+</pre>
+
+Wrong audience and wrong caller (both rejected)
+```
+# Right caller, but the token is meant for the OpenShift API, not inventory-api
+oc exec -n jegan-shop order-service -- sh -c \
+  'curl -s -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" http://inventory-api:8080/'
+
+# Right audience, but the token belongs to a different service account
+oc exec -n jegan-shop order-service -- curl -s \
+  -H "Authorization: Bearer $(oc create token default -n jegan-shop --audience=inventory-api)" \
+  http://inventory-api:8080/
+```
+
+Expected
+<pre>
+rejected: unknown caller
+rejected: system:serviceaccount:jegan-shop:default is not allowed
+</pre>
+
+To watch the requests arrive on the server side:
+```
+oc logs -n jegan-shop inventory-api
+```
+
+Clean up
+```
+oc adm policy remove-cluster-role-from-user system:auth-delegator -z inventory-api -n jegan-shop
+oc delete project jegan-shop
 ```
