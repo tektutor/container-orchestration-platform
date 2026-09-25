@@ -21,7 +21,7 @@ spec:
 
       containers:
       - name: wordpress
-        image: image-registry.openshift-image-registry.svc:5000/openshift/wordpress:1.0
+        image: image-registry.openshift-image-registry.svc:5000/openshift/bitnami-wordpress:1.0
 
         imagePullPolicy: IfNotPresent
 
