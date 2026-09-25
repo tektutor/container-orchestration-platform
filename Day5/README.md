@@ -202,7 +202,7 @@ Let's add the ldap users now
 ldapadd -x -D "cn=admin,dc=palmeto,dc=org" -W -f palmeto-ldap-users.ldif
 ```
 
-Integrate OpenLDAP with OpenShift v4.19 (ldap-idp.yaml)
+Integrate OpenLDAP with OpenShift v4.22 (ldap-idp.yaml)
 ```
 apiVersion: config.openshift.io/v1
 kind: OAuth
