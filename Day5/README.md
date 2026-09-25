@@ -172,13 +172,14 @@ Expected output
 <pre>
 palmeto@palmeto:~$ oc project
 Using project "jegan" on server "https://api.ocp4.palmeto.org:6443".
+  
 palmeto@palmeto:~$ oc get all
 Warning: apps.openshift.io/v1 DeploymentConfig is deprecated in v4.14+, unavailable no sooner than v6.0+
 No resources found in jegan namespace.
-palmeto@palmeto:~$ 
+  
 palmeto@palmeto:~$ oc create deployment nginx --image=image-registry.openshift-image-registry.svc:5000/openshift/bitnami-nginx:1.28 --replicas=3
 deployment.apps/nginx created
-palmeto@palmeto:~$ 
+  
 palmeto@palmeto:~$ oc get deploy,rs,po
 NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
 deployment.apps/nginx   3/3     3            3           5s
@@ -214,15 +215,18 @@ Expected output
 ```
 palmeto@palmeto:~$ oc expose deploy/nginx --type=ClusterIP --port=8080
 service/nginx exposed
+
 palmeto@palmeto:~$ oc get svc
 NAME    TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
 nginx   ClusterIP   172.30.131.203   <none>        8080/TCP   3s
+
 palmeto@palmeto:~$ oc expose svc/nginx
 route.route.openshift.io/nginx exposed
-palmeto@palmeto:~$ 
+
 palmeto@palmeto:~$ oc get routes
 NAME    HOST/PORT                           PATH   SERVICES   PORT   TERMINATION   WILDCARD
 nginx   nginx-jegan.apps.ocp4.palmeto.org          nginx      8080                 None
+
 palmeto@palmeto:~$ curl http://nginx-jegan.apps.ocp4.palmeto.org
 <!DOCTYPE html>
 <html>
