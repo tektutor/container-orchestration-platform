@@ -56,6 +56,8 @@ oc describe node/worker01.ocp4.palmeto.org
 </pre>
 
 ## Lab - Creating a project in Openshift to deploy your applications into it
+
+Replace 'jegan' with your name to avoid naming conflicts.
 ```
 oc new-project jegan
 ```
