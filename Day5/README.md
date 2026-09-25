@@ -193,6 +193,61 @@ pod/nginx-77dc6db9c4-g2zln   1/1     Running   0          5s
 palmeto@palmeto:~$ 
 </pre>
 
+## Let's create an internal service and expose the application using Route for external access
+```
+oc project jegan
+oc get deploy
+
+# Create an internal service
+oc expose deploy/nginx --type=ClusterIP --port=8080
+
+# Expose the application for external accessing via Route
+oc expose svc/nginx
+
+# List the routes
+oc get routes
+oc describe route/nginx
+
+curl http://nginx-jegan.apps.ocp4.palmeto.org
+```
+Expected output
+```
+palmeto@palmeto:~$ oc expose deploy/nginx --type=ClusterIP --port=8080
+service/nginx exposed
+palmeto@palmeto:~$ oc get svc
+NAME    TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
+nginx   ClusterIP   172.30.131.203   <none>        8080/TCP   3s
+palmeto@palmeto:~$ oc expose svc/nginx
+route.route.openshift.io/nginx exposed
+palmeto@palmeto:~$ 
+palmeto@palmeto:~$ oc get routes
+NAME    HOST/PORT                           PATH   SERVICES   PORT   TERMINATION   WILDCARD
+nginx   nginx-jegan.apps.ocp4.palmeto.org          nginx      8080                 None
+palmeto@palmeto:~$ curl http://nginx-jegan.apps.ocp4.palmeto.org
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+```
 ## Info - Keycloak Overview
 <pre>
 - an opensource Identiy and Access Management (IAM) solution designed for modern application and services
