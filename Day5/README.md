@@ -279,10 +279,10 @@ ldappasswd -x -H ldap://192.168.2.200:389 -D "cn=admin,dc=palmeto,dc=org" -W -S 
 
 # Test authentication after password update
 ldapwhoami -x -H ldap://192.168.2.200:389 -D "uid=jegan,ou=people,dc=palmeto,dc=org" -W
-# Enter password: root@123
+# Enter password: palmeto@123
 
 #Alternate approach
-slappasswd -s "root@123"
+slappasswd -s "palmeto@123"
 
 
 # Check OAuth configuration
