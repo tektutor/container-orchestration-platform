@@ -74,6 +74,33 @@ to build a new example application in Ruby. Or use kubectl to deploy a simple Ku
     kubectl create deployment hello-node --image=registry.k8s.io/e2e-test-images/agnhost:2.43 -- /agnhost serve-hostname
 </pre>
 
+Find the current active project
+```
+oc project 
+```
+
+Switching to a project
+```
+# Switch
+oc project default
+
+# Find active project
+oc project
+
+# Switch back to your project
+oc project jegan
+```
+
+List the projects
+```
+oc get projects
+oc get project
+```
+
+Deleting a project, will also delete all the application and resources in that project ( there is no way to recover it later )
+```
+oc delete project jegan
+```
 
 ## Info - Keycloak Overview
 <pre>
