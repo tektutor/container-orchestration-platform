@@ -44,10 +44,12 @@ image-registry.openshift-image-registry.svc:5000/openshift/bitnami-nginx:1.28
 ## Demo - Securing your Red Hat Openshift with OpenLDAP (SSO)
 
 #### OpenLDAP on Ubuntu 24.04 as an OpenShift LDAP Identity Provider (LDAPS)
-
-This lab installs OpenLDAP on Ubuntu 24.04, adds users and groups, enables TLS on port 636, and configures OpenShift 4 to authenticate users against it over LDAPS.
-
-Replace these with your own values if your environment differs.
+<pre>
+- In this lab, we will be installing OpenLDAP on Ubuntu 24.04
+- Adds users and groupse
+- Enable TLS on port 636
+- Configure OpenShift 4 to authenticate users against it over LDAP
+</pre>
 
 | Item | Value |
 |---|---|
@@ -64,15 +66,12 @@ Replace these with your own values if your environment differs.
 | OpenShift node network | `192.168.100.0/24` |
 | Identity provider name | `ldap` |
 
-These passwords suit an isolated training lab only. Never reuse them on a system reachable from outside.
-
 #### Prerequisites
 
 - Ubuntu 24.04 server with a static IP and `sudo` access
 - OpenShift 4 cluster with `cluster-admin` access (`system:admin` or `kubeadmin`)
 - `oc` CLI on the LDAP server or on your workstation
 - Network route from the OpenShift nodes to the LDAP server
-
 
 Install OpenLDAP, preseed the install answers
 
