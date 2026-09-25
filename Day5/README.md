@@ -131,7 +131,6 @@ Expected: `dn:cn=admin,dc=palmeto,dc=org`
 
 The admin DN is the database root DN. It lives in `cn=config` (`olcRootDN`, `olcRootPW`), not as an entry in the directory tree. Part 8 shows how to change its password.
 
----
 
 Add OUs, users and groups
 
@@ -302,8 +301,6 @@ ldapwhoami -x -H ldap://localhost -D "uid=uday,ou=users,dc=palmeto,dc=org" -w 'p
 
 The first command runs anonymously. Ubuntu's default ACL allows anonymous reads of everything except `userPassword`. The second must print `dn:uid=uday,ou=users,dc=palmeto,dc=org`.
 
----
-
 Enable TLS (LDAPS on port 636)
 
 A fresh install listens only on 389 with no TLS. You can confirm this: the root DSE lacks the StartTLS OID `1.3.6.1.4.1.1466.20037`.
@@ -415,8 +412,6 @@ supportedExtension: 1.3.6.1.4.1.1466.20037
 dn:uid=uday,ou=users,dc=palmeto,dc=org
 ```
 
----
-
 Open the firewall
 
 OpenShift only needs port 636. Allow it from the cluster node network:
@@ -434,8 +429,6 @@ sudo ufw enable
 ```
 
 Local admin work uses `ldap://localhost` and `ldapi:///`, so 389 does not need to be open to the network.
-
----
 
 Test from an OpenShift node
 
@@ -473,8 +466,6 @@ oc debug node/$(oc get nodes -o jsonpath='{.items[0].metadata.name}') -- \
 ```
 
 Expected: `Verify return code: 0 (ok)`
-
----
 
 Configure OpenShift
 
@@ -596,8 +587,6 @@ oc get co authentication -w
 
 `-w` keeps watching and never returns on its own. Press Ctrl+C once `PROGRESSING` goes from `True` back to `False` (usually 2 to 4 minutes).
 
----
-
 Log in as an LDAP user
 
 Trust the cluster certificates
@@ -687,8 +676,6 @@ oc delete user root
 oc delete identity <identity-name-from-above>
 ```
 
----
-
 Change the admin (root DN) password
 
 `ldappasswd` against `cn=admin,dc=palmeto,dc=org` fails with `No such object (32)`, because the root DN is not a directory entry. Change `olcRootPW` in `cn=config` instead. The `ldapi:///` socket works even if the current admin password is unknown.
@@ -733,8 +720,6 @@ LDAPTLS_CACERT=~/ldap-tls/ca.crt ldappasswd -x -H ldaps://192.168.2.200 \
   -s 'palmeto@123' "uid=uday,ou=users,dc=palmeto,dc=org"
 ```
 
----
-
 Troubleshooting
 
 | Symptom | Cause | Fix |
@@ -768,8 +753,6 @@ Common log messages:
 | `LDAP Result Code 49 "Invalid Credentials"` | Wrong user password or wrong bind password |
 | `LDAP Result Code 32 "No Such Object"` | Search base in the URL does not exist |
 | `x509` | CA in `ldap-ca` does not match the LDAP server certificate, or the SAN does not match the URL host |
-
----
 
 Hardening beyond the lab
 
