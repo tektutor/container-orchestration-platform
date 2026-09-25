@@ -252,6 +252,13 @@ Commercial support is available at
 </body>
 </html>
 ```
+
+## Lab - Deploying application into Openshift using GitHub source S2I using Docker strategy
+```
+oc project jegan
+oc new-app --name=hello-microservice https://github.com/tektutor/spring-ms.git --strategy=docker
+```
+
 ## Info - Keycloak Overview
 <pre>
 - an opensource Identiy and Access Management (IAM) solution designed for modern application and services
