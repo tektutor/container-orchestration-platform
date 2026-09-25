@@ -47,15 +47,6 @@ image-registry.openshift-image-registry.svc:5000/openshift/bitnami-nginx:1.28
 
 This lab installs OpenLDAP on Ubuntu 24.04, adds users and groups, enables TLS on port 636, and configures OpenShift 4 to authenticate users against it over LDAPS.
 
-#### Repository files
-
-| File | Purpose |
-|---|---|
-| `README.md` | This guide |
-| `gen-ldap-users.sh` | Generates an LDIF of local Linux users for import into LDAP (Part 2.3) |
-
-#### Lab values
-
 Replace these with your own values if your environment differs.
 
 | Item | Value |
@@ -82,11 +73,8 @@ These passwords suit an isolated training lab only. Never reuse them on a system
 - `oc` CLI on the LDAP server or on your workstation
 - Network route from the OpenShift nodes to the LDAP server
 
----
 
-#### Part 1: Install OpenLDAP
-
-###### 1.1 Preseed the install answers
+Install OpenLDAP, preseed the install answers
 
 Ubuntu derives the base DN from the domain you give the installer. Preseed it so the result is `dc=palmeto,dc=org`:
 
@@ -104,7 +92,7 @@ slapd slapd/move_old_database boolean true
 EOF
 ```
 
-##### 1.2 Install the packages
+Install the packages
 
 ```bash
 sudo DEBIAN_FRONTEND=noninteractive apt install -y slapd ldap-utils
@@ -116,7 +104,7 @@ If `slapd` was already installed with a different domain, reconfigure it and ans
 sudo dpkg-reconfigure slapd
 ```
 
-##### 1.3 Verify the install
+Verify the install
 
 ```bash
 sudo systemctl status slapd --no-pager | head -3
@@ -145,11 +133,11 @@ The admin DN is the database root DN. It lives in `cn=config` (`olcRootDN`, `olc
 
 ---
 
-## Part 2: Add OUs, users and groups
+Add OUs, users and groups
 
 Create the OUs first (2.1). Then add users with either Option A (2.2, a fixed sample set) or Option B (2.3, import the local Linux users of the LDAP server). Add groups last (2.4).
 
-### 2.1 Create the OUs
+Create the OUs
 
 ```bash
 mkdir -p ~/ldap-lab && cd ~/ldap-lab
@@ -169,42 +157,7 @@ ldapadd -x -H ldap://localhost -D "cn=admin,dc=palmeto,dc=org" -w 'admin@123' -f
 
 Expected: two `adding new entry` lines.
 
-### 2.2 Option A: Add sample users
-
-```bash
-cat > users.ldif <<'EOF'
-dn: uid=jegan,ou=users,dc=palmeto,dc=org
-objectClass: inetOrgPerson
-uid: jegan
-cn: jegan
-sn: jegan
-mail: jegan@palmeto.org
-
-dn: uid=uday,ou=users,dc=palmeto,dc=org
-objectClass: inetOrgPerson
-uid: uday
-cn: uday
-sn: uday
-mail: uday@palmeto.org
-EOF
-
-ldapadd -x -H ldap://localhost -D "cn=admin,dc=palmeto,dc=org" -w 'admin@123' -f users.ldif
-```
-
-`inetOrgPerson` requires `cn` and `sn`.
-
-Set the passwords. `ldappasswd` stores each one as a salted hash:
-
-```bash
-for u in jegan uday; do
-  ldappasswd -x -H ldap://localhost -D "cn=admin,dc=palmeto,dc=org" -w 'admin@123' \
-    -s 'palmeto@123' "uid=$u,ou=users,dc=palmeto,dc=org"
-done
-```
-
-It returns silently on success.
-
-### 2.3 Option B: Import local Linux users
+Import local Linux users
 
 `gen-ldap-users.sh` reads accounts from `getent passwd` and writes an LDIF. It:
 
@@ -319,7 +272,7 @@ ldapdelete -x -H ldap://localhost -D "cn=admin,dc=palmeto,dc=org" -w 'admin@123'
   "uid=root,ou=users,dc=palmeto,dc=org"
 ```
 
-### 2.4 Add groups
+Add groups
 
 `groupOfNames` requires at least one `member`. The member DNs below must match users you created in 2.2 or 2.3.
 
@@ -339,7 +292,7 @@ EOF
 ldapadd -x -H ldap://localhost -D "cn=admin,dc=palmeto,dc=org" -w 'admin@123' -f groups.ldif
 ```
 
-### 2.5 Verify
+Verify
 
 ```bash
 ldapsearch -x -H ldap://localhost -b ou=users,dc=palmeto,dc=org -LLL uid cn mail
@@ -351,7 +304,7 @@ The first command runs anonymously. Ubuntu's default ACL allows anonymous reads 
 
 ---
 
-## Part 3: Enable TLS (LDAPS on port 636)
+Enable TLS (LDAPS on port 636)
 
 A fresh install listens only on 389 with no TLS. You can confirm this: the root DSE lacks the StartTLS OID `1.3.6.1.4.1.1466.20037`.
 
@@ -361,7 +314,7 @@ ldapsearch -x -H ldap://localhost -b "" -s base supportedExtension | grep 1466.2
 
 No output means TLS is not configured.
 
-### 3.1 Create a CA and a server certificate
+Create a CA and a server certificate
 
 OpenShift checks the certificate's Subject Alternative Name (SAN), not the CN. Put the exact address the cluster uses to reach LDAP into the SAN.
 
@@ -392,7 +345,7 @@ To use a hostname as well, change the SAN line before signing, for example:
 
 Keep `ca.key` safe and off the cluster. You need it to reissue the server certificate before it expires.
 
-### 3.2 Install the files
+Install the files
 
 ```bash
 sudo install -d -m 755 /etc/ldap/tls
@@ -403,7 +356,7 @@ sudo chmod 640 /etc/ldap/tls/ldap.key
 
 slapd runs as user `openldap`, so the key must be readable by that group.
 
-### 3.3 Point slapd at the certificates
+Point slapd at the certificates
 
 ```bash
 cat > tls.ldif <<'EOF'
@@ -431,7 +384,7 @@ sudo ldapsearch -Y EXTERNAL -H ldapi:/// -b cn=config -s base -LLL \
   olcTLSCACertificateFile olcTLSCertificateFile olcTLSCertificateKeyFile 2>/dev/null
 ```
 
-### 3.4 Enable the ldaps listener
+Enable the ldaps listener
 
 ```bash
 sudo sed -i 's|^SLAPD_SERVICES=.*|SLAPD_SERVICES="ldap:/// ldapi:/// ldaps:///"|' /etc/default/slapd
@@ -442,7 +395,7 @@ sudo ss -tlnp | grep slapd
 
 Expected: slapd on `:389` and `:636`.
 
-### 3.5 Verify TLS
+Verify TLS
 
 ```bash
 openssl s_client -connect 192.168.2.200:636 -CAfile ~/ldap-tls/ca.crt < /dev/null 2>/dev/null \
@@ -464,7 +417,7 @@ dn:uid=uday,ou=users,dc=palmeto,dc=org
 
 ---
 
-## Part 4: Open the firewall
+Open the firewall
 
 OpenShift only needs port 636. Allow it from the cluster node network:
 
@@ -484,11 +437,11 @@ Local admin work uses `ldap://localhost` and `ldapi:///`, so 389 does not need t
 
 ---
 
-## Part 5: Test from an OpenShift node
+Test from an OpenShift node
 
 The OAuth server pods connect from the cluster network, so test from a node, not only from the LDAP host.
 
-### 5.1 Check the route
+Check the route
 
 ```bash
 oc debug node/$(oc get nodes -o jsonpath='{.items[0].metadata.name}') -- \
@@ -497,7 +450,7 @@ oc debug node/$(oc get nodes -o jsonpath='{.items[0].metadata.name}') -- \
 
 The node must reach LDAP at the same address that appears in the certificate SAN.
 
-### 5.2 Check the port
+Check the port
 
 ```bash
 oc debug node/$(oc get nodes -o jsonpath='{.items[0].metadata.name}') -- \
@@ -506,7 +459,7 @@ oc debug node/$(oc get nodes -o jsonpath='{.items[0].metadata.name}') -- \
 
 Expected: `open`
 
-### 5.3 Check TLS with the CA
+Check TLS with the CA
 
 `oc debug` does not attach stdin by default, so pass the CA as base64 inside the command:
 
@@ -523,9 +476,9 @@ Expected: `Verify return code: 0 (ok)`
 
 ---
 
-## Part 6: Configure OpenShift
+Configure OpenShift
 
-### 6.1 Store the CA and bind password
+Store the CA and bind password
 
 The ConfigMap key must be `ca.crt`. The secret key must be `bindPassword`. Both must live in `openshift-config`.
 
@@ -536,7 +489,7 @@ oc create secret generic ldap-secret -n openshift-config \
   --from-literal=bindPassword='admin@123'
 ```
 
-### 6.2 Check for existing identity providers
+Check for existing identity providers
 
 ```bash
 oc get oauth cluster -o jsonpath='{.spec.identityProviders[*].name}{"\n"}'
@@ -567,7 +520,7 @@ spec:
 
 The URL format is `ldaps://host:port/<search base>?<login attribute>`. Users type their `uid` at login.
 
-### 6.3a No providers yet (empty output)
+No providers yet (empty output)
 
 ```bash
 oc patch oauth cluster --type=merge -p '{"spec":{"identityProviders":[{
@@ -590,7 +543,7 @@ oc patch oauth cluster --type=merge -p '{"spec":{"identityProviders":[{
 }]}}'
 ```
 
-### 6.3b Other providers exist (for example `htpasswd`)
+Other providers exist (for example `htpasswd`)
 
 A merge patch replaces the whole list and would delete them. Append instead:
 
@@ -615,7 +568,7 @@ oc patch oauth cluster --type=json -p '[{"op":"add","path":"/spec/identityProvid
 }}]'
 ```
 
-### 6.3c An `ldap` provider already exists (for example an old insecure one)
+An `ldap` provider already exists (for example an old insecure one)
 
 Update it in place. Do not rename it and do not change its `id` attribute. OpenShift names each identity `<provider>:<id>`, so either change breaks users who already logged in.
 
@@ -635,7 +588,7 @@ oc patch oauth cluster --type=json -p '[
 ]'
 ```
 
-### 6.4 Watch the rollout
+Watch the rollout
 
 ```bash
 oc get co authentication -w
@@ -645,9 +598,9 @@ oc get co authentication -w
 
 ---
 
-## Part 7: Log in as an LDAP user
+Log in as an LDAP user
 
-### 7.1 Trust the cluster certificates
+Trust the cluster certificates
 
 `oc login` talks to two endpoints: the API server and the OAuth route `oauth-openshift.apps.<cluster>`. The OAuth route uses the default ingress certificate, which a separate ingress CA signs. Without that CA, login fails with `x509: certificate signed by unknown authority`.
 
@@ -667,7 +620,7 @@ cat api-ca.crt ingress-ca.crt > ocp-ca-bundle.crt
 
 Share `ocp-ca-bundle.crt` with trainees. It contains only public certificates.
 
-### 7.2 Log in
+Log in
 
 Note your admin context first so you can return to it:
 
@@ -695,7 +648,7 @@ KUBECONFIG=~/.kube/uday oc login -u uday -p 'palmeto@123' \
   --insecure-skip-tls-verify=true https://api.ocp4.palmeto.org:6443
 ```
 
-### 7.3 Switch back to admin and check the identity
+Switch back to admin and check the identity
 
 ```bash
 oc config use-context <admin-context-from-7.2>
@@ -717,7 +670,7 @@ echo 'dWlkPXVkYXksb3U9dXNlcnMsZGM9cGFsbWV0byxkYz1vcmc' | base64 -d; echo
 
 Output: `uid=uday,ou=users,dc=palmeto,dc=org`
 
-### 7.4 Grant roles
+Grant roles
 
 OpenShift creates the `User` object on first login. Grant cluster roles after that:
 
@@ -726,7 +679,7 @@ oc adm policy add-cluster-role-to-user cluster-admin jegan
 oc adm policy add-role-to-user edit uday -n <project>
 ```
 
-If a `root` user ever logged in through LDAP before you removed it in 2.3, delete its OpenShift objects too:
+If a `root` user ever logged in through LDAP before you removed it, delete its OpenShift objects too:
 
 ```bash
 oc get identity | grep -w root
@@ -736,7 +689,7 @@ oc delete identity <identity-name-from-above>
 
 ---
 
-## Part 8: Change the admin (root DN) password
+Change the admin (root DN) password
 
 `ldappasswd` against `cn=admin,dc=palmeto,dc=org` fails with `No such object (32)`, because the root DN is not a directory entry. Change `olcRootPW` in `cn=config` instead. The `ldapi:///` socket works even if the current admin password is unknown.
 
@@ -782,7 +735,7 @@ LDAPTLS_CACERT=~/ldap-tls/ca.crt ldappasswd -x -H ldaps://192.168.2.200 \
 
 ---
 
-## Troubleshooting
+Troubleshooting
 
 | Symptom | Cause | Fix |
 |---|---|---|
@@ -818,7 +771,7 @@ Common log messages:
 
 ---
 
-## Hardening beyond the lab
+Hardening beyond the lab
 
 - Replace the `cn=admin` bind with a read-only account limited to `ou=users`, or remove `bindDN` and `bindPassword` if anonymous search is acceptable. The directory admin password in `openshift-config` gives anyone who can read that secret full write access to LDAP.
 - Restrict port 636 to the cluster node network and admin workstations only.
