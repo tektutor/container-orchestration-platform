@@ -1,5 +1,56 @@
 # Day 5
 
+## Info - Red Hat Openshift Overview
+<pre>
+- developed on top of Googele Kubernetes open source project with many additional features developed on top of Kubernetes
+- Red Hat Openshift is a commercial Paid tool
+- you get world-wide support from Red Hat ( an IBM company )
+- it provides both command-line interface and Web console (GUI)
+- it is a superset of Google Kubernetes Container Orchestration Platform
+- these are some of the additional features supported in Red Hat Openshift
+  - Web console ( GUI )
+  - User Management 
+  - S2I
+    - In kubernetes, we can only deploy an application with a container image
+    - In Openshift, the above is also possible, in addition to deploy application from container image
+      one can deploy application from source code coming from your version control like GitHub 
+      - it supports many S2I strategies
+        1. source 
+        2. docker
+        3. pipeline
+        4. binary
+        5. custom
+  - Route
+    - a way to expose your application for external access with an user-friendly public url
+  - Build, BuildConfig
+  - ImageStream
+  - DeploymentConfig
+  - In-built Internal Container Image Registry
+    - this registry has many images both in-built and the ones that we build
+    - all the nodes in Openshift can download and upload container images from/to this Container Registry
+- just like Google Kubernetes, it works as a group/cluster of nodes
+- each node can be a Physical Server or virtual machine running locally or on some public cloud
+- the Operating System that must be installed in master nodes is Red Hat Enterprise Core OS (RHCOS)
+- the Operating System that can be installed in worker nodes are
+  1. Red Hat Enterprise CoreOS ( RHCOS ) - this is what Red Hat recommends
+     - this in read-only (immutable OS)
+     - the RHCOS is an optimized OS, designed for the purpose of Container Orchestration Platform use
+     - it enforces many best-practices and it is highly secure OS
+     - it comes with pre-installed CRI-O Container Runtime and Podman Container Engine
+     - it comes with pre-installed S2I (Source to Image) tools
+     - the advantage of using this OS in all master and worker nodes is
+       - using oc command or from Web console we can upgrade the cluster from one version to other
+     - certain OS folders like /etc, /usr, /bin, /var folders are considered read-only
+     - Only Machine Config Operators (MCO) can modify these folder if required, otherwise normal applications
+       are not allowed to modify the read-only folders
+     - Ports upto 1024 are reserved for internal use, hence user-application can't use ports
+     - User applications can't run with admin permission
+     - User application must use only rootless container images
+  2. Red Hat Enterprise Linux ( RHEL )
+     - in this we need to install CRI-O and Podman
+</pre>
+
+
 ## Info - Red Hat Openshift Access Details
 <pre>
 - I have replaced Kubernetes cluster with Red Hat Openshift in server1(192.168.2.200) and server2(192.168.2.201)
