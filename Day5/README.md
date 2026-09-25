@@ -1949,3 +1949,55 @@ oc get pods -w
 
 # Switch to Openshift webconsole, select your project and observe from the Topology
 ```
+
+## Info - MCP Overview
+<pre>
+- MCP is a standard way to plug external tools and data into an AI assistant, 
+  so the model can do things and read things beyond its training, through a uniform 
+  interface instead of a bespoke integration per tool
+- The problem it solves
+  - Before MCP, every "give the AI access to X" was a custom integration
+  - one glue layer for your database, another for GitHub, another for your filesystem, 
+    each with its own auth, schema, and calling convention. 
+  - N tools times M AI applications means N×M integrations
+  - MCP makes it N+M
+    - a tool author writes one MCP server, and any MCP-capable client can use it
+    - It's deliberately analogous to what a common driver interface or a protocol like 
+      LSP (Language Server Protocol) did, standardize the connector so the two sides stop 
+      needing custom wiring
+- The two roles
+  - MCP server 
+    - exposes capabilities
+    - it wraps some external system, a database, an API, a filesystem, a ticketing system, 
+      and presents it through the MCP interface
+    - a server is usually small and single-purpose ("the GitHub server", "the Postgres server")
+  - MCP client lives inside the AI application (the assistant, the IDE plugin, the agent runtime)
+  - it connects to one or more servers, discovers what they offer, and lets the model invoke them
+  - the client is the model's hands and eyes, the server is the thing being touched
+
+- the AI model itself never speaks MCP directly
+- the client mediates
+  - it presents the server's capabilities to the model, and when the model decides to use one, 
+    the client makes the actual MCP call and feeds the result back
+- The three things a server exposes
+  - Tools
+    - actions the model can invoke, functions with side effects or computation
+    - Create a GitHub issue
+    - run this SQL query
+    - send an email
+  - Resources
+    - data the model can read, addressed by URI
+    - A file's contents
+    - a database record
+    - a document
+  - Prompts
+    - reusable, parameterized prompt templates the server offers
+    - summarize this PR
+    - review this code for security issues
+</pre>
+
+## Info - MCP AI Agent
+<pre>
+- Model Context Protocol connects AI assistants to external tools and data
+- An MCP server exposes tools, resources, and prompts, an AI client connects over stdio or HTTP
+</pre>
