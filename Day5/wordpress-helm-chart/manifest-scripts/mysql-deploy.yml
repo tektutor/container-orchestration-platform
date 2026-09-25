@@ -20,7 +20,7 @@ spec:
           claimName: mysql-pvc-{{.Values.your_name}}
       containers:
       - name: mysql
-        image: image-registry.openshift-image-registry.svc:5000/openshift/mariadb:1.0
+        image: image-registry.openshift-image-registry.svc:5000/openshift/bitnami-mariadb:1.0
         imagePullPolicy: IfNotPresent
 
         volumeMounts:
