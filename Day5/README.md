@@ -754,8 +754,13 @@ Common log messages:
 | `x509` | CA in `ldap-ca` does not match the LDAP server certificate, or the SAN does not match the URL host |
 
 Hardening beyond the lab
-
-- Replace the `cn=admin` bind with a read-only account limited to `ou=users`, or remove `bindDN` and `bindPassword` if anonymous search is acceptable. The directory admin password in `openshift-config` gives anyone who can read that secret full write access to LDAP.
+<pre>
+- Replace the `cn=admin` bind with a read-only account limited to `ou=users`, or remove `bindDN` and 
+  `bindPassword` if anonymous search is acceptable. The directory admin password in `openshift-config` 
+  gives anyone who can read that secret full write access to LDAP
 - Restrict port 636 to the cluster node network and admin workstations only.
-- Reissue `ldap.crt` before it expires (825 days) with the same CA. The OpenShift ConfigMap does not change as long as the CA stays the same.
-- Sync `ou=groups` into OpenShift groups with `oc adm groups sync` and grant roles to groups instead of individual users.
+- Reissue `ldap.crt` before it expires (825 days) with the same CA. The OpenShift ConfigMap does not change 
+  as long as the CA stays the same
+- Sync `ou=groups` into OpenShift groups with `oc adm groups sync` and grant roles to groups instead of 
+  individual users
+</pre>
