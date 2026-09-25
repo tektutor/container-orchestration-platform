@@ -1908,3 +1908,19 @@ I'll confirm the scheduler setting is back to `false` at my end.
 ```
 oc get schedulers.config.openshift.io cluster -o jsonpath='{.spec.mastersSchedulable}{"\n"}'
 ```
+
+## Info - Helm Overview
+<pre>
+- it is a package manager for Kubernetes and Openshift applications
+- we can package and distribute our K8s/OPenshift applications as Helm Chart
+- JFrog Artifacts supports setting up a Helm Repository
+- Helm works just like oc/kubectl, hence it depends on the kubeconfig file
+- Helm interacts with K8s/Openshift via REST API calls  
+</pre>
+
+## Demo - Installing Helm Package Manager
+<pre>
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
+chmod 700 get_helm.sh
+./get_helm.sh
+</pre>
