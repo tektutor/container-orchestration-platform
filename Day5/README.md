@@ -19,6 +19,29 @@ oc whoami --show-server
 oc whoami --show-console
 ```
 
+Expected output
+<pre>
+palmeto@palmeto:~$ kubectl version
+Client Version: v1.35.2
+Kustomize Version: v5.7.1
+Server Version: v1.35.6
+palmeto@palmeto:~$ 
+palmeto@palmeto:~$ oc version
+Client Version: 4.22.15
+Kustomize Version: v5.7.1
+Server Version: 4.22.15
+Kubernetes Version: v1.35.6
+palmeto@palmeto:~$ 
+palmeto@palmeto:~$ oc get nodes
+NAME                        STATUS   ROLES                  AGE   VERSION
+master01.ocp4.palmeto.org   Ready    control-plane,master   13h   v1.35.6
+master02.ocp4.palmeto.org   Ready    control-plane,master   13h   v1.35.6
+master03.ocp4.palmeto.org   Ready    control-plane,master   13h   v1.35.6
+worker01.ocp4.palmeto.org   Ready    worker                 12h   v1.35.6
+worker02.ocp4.palmeto.org   Ready    worker                 12h   v1.35.6
+worker03.ocp4.palmeto.org   Ready    worker                 12h   v1.35.6
+</pre>
+
 ## Info - Images available in Openshift Internal Registry
 <pre>
 image-registry.openshift-image-registry.svc:5000/openshift/bitnami-nginx:1.30
