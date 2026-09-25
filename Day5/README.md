@@ -168,7 +168,30 @@ oc create deployment nginx --image=image-registry.openshift-image-registry.svc:5
 # List the deployments ,replicasets and pods in your project
 oc get deploy,rs,po
 ```
+Expected output
+<pre>
+palmeto@palmeto:~$ oc project
+Using project "jegan" on server "https://api.ocp4.palmeto.org:6443".
+palmeto@palmeto:~$ oc get all
+Warning: apps.openshift.io/v1 DeploymentConfig is deprecated in v4.14+, unavailable no sooner than v6.0+
+No resources found in jegan namespace.
+palmeto@palmeto:~$ 
+palmeto@palmeto:~$ oc create deployment nginx --image=image-registry.openshift-image-registry.svc:5000/openshift/bitnami-nginx:1.28 --replicas=3
+deployment.apps/nginx created
+palmeto@palmeto:~$ 
+palmeto@palmeto:~$ oc get deploy,rs,po
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nginx   3/3     3            3           5s
 
+NAME                               DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-77dc6db9c4   3         3         3       5s
+
+NAME                         READY   STATUS    RESTARTS   AGE
+pod/nginx-77dc6db9c4-2v4lz   1/1     Running   0          5s
+pod/nginx-77dc6db9c4-cmbn7   1/1     Running   0          5s
+pod/nginx-77dc6db9c4-g2zln   1/1     Running   0          5s
+palmeto@palmeto:~$ 
+</pre>
 
 ## Info - Keycloak Overview
 <pre>
