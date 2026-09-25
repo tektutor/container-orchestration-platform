@@ -55,6 +55,24 @@ oc describe node/master01.ocp4.palmeto.org
 oc describe node/worker01.ocp4.palmeto.org
 </pre>
 
+## Lab - Creating a project in Openshift to deploy your applications into it
+```
+oc new-project jegan
+```
+
+Expected output
+<pre>
+palmeto@palmeto:~$ oc new-project jegan
+Already on project "jegan" on server "https://api.ocp4.palmeto.org:6443".
+
+You can add applications to this project with the 'new-app' command. For example, try:
+
+    oc new-app rails-postgresql-example
+
+to build a new example application in Ruby. Or use kubectl to deploy a simple Kubernetes application:
+
+    kubectl create deployment hello-node --image=registry.k8s.io/e2e-test-images/agnhost:2.43 -- /agnhost serve-hostname
+</pre>
 
 
 ## Info - Keycloak Overview
