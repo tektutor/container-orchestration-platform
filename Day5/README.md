@@ -1924,3 +1924,28 @@ curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scrip
 chmod 700 get_helm.sh
 ./get_helm.sh
 </pre>
+
+## Lab - Creating a custom helm chart of wordpress and mariadb application and deploying into Openshift
+```
+cd ~/container-orchestration-platform
+git pull
+cd Day5/wordpress-helm-chart/
+helm version
+helm create wordpress
+cd wordpress/templates
+rm -rf *
+cp ../../manifests-scripts/* .
+cd ..
+cp ../../values.yaml .
+cd ..
+helm package wordpress/
+
+oc new-project jegan
+helm install wp wordpress-0.1.0.tgz
+
+helm list
+
+oc get pods -w
+
+# Switch to Openshift webconsole, select your project and observe from the Topology
+```
