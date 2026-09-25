@@ -548,8 +548,9 @@ oc apply -f /tmp/ldap-non-ssl.yaml
 # Wait for OAuth configuration to propagate (2-3 minutes)
 sleep 180
 
-# Try OpenShift login
-oc login --username=jegan --password='palmeto@123' --insecure-skip-tls-verify
+# Try OpenShift login ( ldap password is admin@123 )
+ldappasswd -x -H ldap://192.168.2.200:389 -D "cn=admin,dc=palmeto,dc=org" -W -S "uid=madhusudan,ou=users,dc=palmeto,dc=org"
+oc login --username=madhusudan --password='palmeto@123' --insecure-skip-tls-verify
 
 # In another terminal, monitor authentication attempts
 oc logs -n openshift-authentication deployment/oauth-openshift -f | grep -E "(jegan|ldap|bind|authentication|error)"
