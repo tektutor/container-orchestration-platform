@@ -42,7 +42,7 @@ worker02.ocp4.palmeto.org   Ready    worker                 12h   v1.35.6
 worker03.ocp4.palmeto.org   Ready    worker                 12h   v1.35.6
 </pre>
 
-## Info - Images available in Openshift Internal Registry
+## Info - Images available in Openshift Internal Images Registry
 <pre>
 image-registry.openshift-image-registry.svc:5000/openshift/bitnami-nginx:1.30
 image-registry.openshift-image-registry.svc:5000/openshift/bitnami-nginx:1.29
