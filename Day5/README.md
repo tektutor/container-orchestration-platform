@@ -49,6 +49,14 @@ image-registry.openshift-image-registry.svc:5000/openshift/bitnami-nginx:1.29
 image-registry.openshift-image-registry.svc:5000/openshift/bitnami-nginx:1.28  
 </pre>
 
+## Lab - Find more details about node
+<pre>
+oc describe node/master01.ocp4.palmeto.org
+oc describe node/worker01.ocp4.palmeto.org
+</pre>
+
+
+
 ## Info - Keycloak Overview
 <pre>
 - an opensource Identiy and Access Management (IAM) solution designed for modern application and services
