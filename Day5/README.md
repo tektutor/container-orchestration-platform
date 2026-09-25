@@ -43,18 +43,18 @@ image-registry.openshift-image-registry.svc:5000/openshift/bitnami-nginx:1.28
 
 ## Demo - Securing your Red Hat Openshift with OpenLDAP (SSO)
 
-# OpenLDAP on Ubuntu 24.04 as an OpenShift LDAP Identity Provider (LDAPS)
+#### OpenLDAP on Ubuntu 24.04 as an OpenShift LDAP Identity Provider (LDAPS)
 
 This lab installs OpenLDAP on Ubuntu 24.04, adds users and groups, enables TLS on port 636, and configures OpenShift 4 to authenticate users against it over LDAPS.
 
-## Repository files
+#### Repository files
 
 | File | Purpose |
 |---|---|
 | `README.md` | This guide |
 | `gen-ldap-users.sh` | Generates an LDIF of local Linux users for import into LDAP (Part 2.3) |
 
-## Lab values
+#### Lab values
 
 Replace these with your own values if your environment differs.
 
@@ -75,7 +75,7 @@ Replace these with your own values if your environment differs.
 
 These passwords suit an isolated training lab only. Never reuse them on a system reachable from outside.
 
-## Prerequisites
+#### Prerequisites
 
 - Ubuntu 24.04 server with a static IP and `sudo` access
 - OpenShift 4 cluster with `cluster-admin` access (`system:admin` or `kubeadmin`)
@@ -84,9 +84,9 @@ These passwords suit an isolated training lab only. Never reuse them on a system
 
 ---
 
-## Part 1: Install OpenLDAP
+#### Part 1: Install OpenLDAP
 
-### 1.1 Preseed the install answers
+###### 1.1 Preseed the install answers
 
 Ubuntu derives the base DN from the domain you give the installer. Preseed it so the result is `dc=palmeto,dc=org`:
 
@@ -104,7 +104,7 @@ slapd slapd/move_old_database boolean true
 EOF
 ```
 
-### 1.2 Install the packages
+##### 1.2 Install the packages
 
 ```bash
 sudo DEBIAN_FRONTEND=noninteractive apt install -y slapd ldap-utils
@@ -116,7 +116,7 @@ If `slapd` was already installed with a different domain, reconfigure it and ans
 sudo dpkg-reconfigure slapd
 ```
 
-### 1.3 Verify the install
+##### 1.3 Verify the install
 
 ```bash
 sudo systemctl status slapd --no-pager | head -3
