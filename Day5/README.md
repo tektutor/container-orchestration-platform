@@ -334,9 +334,9 @@ Note
 </pre>
 
 A JSON Web Token (JWT) has three base64url-encoded parts separated by dots
-<pre>
+```
 <header>.<payload>.<signature>
-</pre>
+```
 
 <pre>
 - Header - signing algorithm (alg) and key ID (kid)
