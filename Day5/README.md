@@ -154,6 +154,21 @@ Deleting a project, will also delete all the application and resources in that p
 ```
 oc delete project jegan
 ```
+## Lab - Deploying your first application into Openshift
+```
+# Incase you don't have a project already, create it now
+oc new-project jegan
+
+# Switch to your project
+oc project jegan
+
+# Deploy nginx into your project
+oc create deployment nginx --image=image-registry.openshift-image-registry.svc:5000/openshift/bitnami-nginx:1.28 --replicas=3
+
+# List the deployments ,replicasets and pods in your project
+oc get deploy,rs,po
+```
+
 
 ## Info - Keycloak Overview
 <pre>
