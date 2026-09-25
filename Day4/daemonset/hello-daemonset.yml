@@ -2,17 +2,17 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
-    app: nginx
-  name: nginx
+    app: hello
+  name: hello
 spec:
   selector:
     matchLabels:
-      app: nginx
+      app: hello
   template:
     metadata:
       labels:
-        app: nginx
+        app: hello
     spec:
       containers:
-      - image: image-registry.openshift-image-registry.svc:5000/openshift/hello:1.0
+      - image: tektutor/spring-ms:1.0
         name: hello

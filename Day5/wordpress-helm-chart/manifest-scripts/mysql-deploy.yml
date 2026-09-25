@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      volumes:
+      - name: mysql-storage
+        persistentVolumeClaim:
+          claimName: mysql-pvc-{{.Values.your_name}}
+      containers:
+      - name: mysql
+        image: image-registry.openshift-image-registry.svc:5000/openshift/mariadb:1.0
+        imagePullPolicy: IfNotPresent
+
+        volumeMounts:
+        - name: mysql-storage
+          mountPath: /bitnami/mariadb/data
+
+        env:
+        - name: MARIADB_ROOT_PASSWORD 
+          valueFrom: 
+             secretKeyRef:
+               name: wordpress-login-credentials
+               key: password
+
+        - name: MARIADB_DATABASE
+          valueFrom: 
+             configMapKeyRef:
+               name: wordpress-cm
+               key: db_name

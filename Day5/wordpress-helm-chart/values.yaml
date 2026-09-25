@@ -1,0 +1,6 @@
+nfs_server_ip: "192.168.10.200"  # In case of server 2 this must be replaced with 192.168.10.201 
+nfs_wordpress_path: "/var/nfs/jegan/wordpress" # Update this with your wordpress nfs shared folder
+nfs_mysql_path: "/var/nfs/jegan/mysql"         # Update this with your mysql nfs shared folder
+wordpress_pv_size: "100Mi"
+mysql_pv_size: "100Mi"
+your_name: jegan                               # Update this with your linux username

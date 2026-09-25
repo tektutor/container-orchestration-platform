@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc-{{.Values.your_name}}
+spec:
+  selector:
+    matchLabels:
+      name: {{.Values.your_name}}
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: {{.Values.mysql_pv_size}} 
