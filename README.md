@@ -17,17 +17,21 @@ Copy/Paste between your local machine and Palmeto Cloud is disabled as per your 
 
 Hence, I would suggest you to open this Training Repository on the Cloud Machine Web browser so copy/paste.
 
-## Pre-test url
+## Kindly share your training feedback here
 <pre>
-https://forms.cloud.microsoft/r/AgYy4QLta0  
+https://forms.cloud.microsoft/r/r6K8MFJupY
 </pre>
 
+## Post-test url
+<pre>
+https://forms.cloud.microsoft/r/RWNV41fuKT
+</pre>
 Note
 <pre>
 - Copy/Paste is disabled between your local machine and lab machine as per your Bank policy
-- Kindly complete your pre-test and leave a message in the chat, in case you don't have chat access you 
+- Kindly complete your post-test and leave a message in the chat, in case you don't have chat access you 
   can directly confirm once you have completed the test
-- Kindly provide your full name while registering for the pre-test, so that your L&D will be able to 
+- Kindly provide your full name while registering for the post-test, so that your L&D will be able to 
   recognize you
 - Kindly do not share your BOFA ID during this training anywhere
 - Kindly do not share your screen during this training, you may inform me your Palmeto username, 
