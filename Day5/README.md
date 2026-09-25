@@ -25,13 +25,13 @@ palmeto@palmeto:~$ kubectl version
 Client Version: v1.35.2
 Kustomize Version: v5.7.1
 Server Version: v1.35.6
-palmeto@palmeto:~$ 
+
 palmeto@palmeto:~$ oc version
 Client Version: 4.22.15
 Kustomize Version: v5.7.1
 Server Version: 4.22.15
 Kubernetes Version: v1.35.6
-palmeto@palmeto:~$ 
+
 palmeto@palmeto:~$ oc get nodes
 NAME                        STATUS   ROLES                  AGE   VERSION
 master01.ocp4.palmeto.org   Ready    control-plane,master   13h   v1.35.6
