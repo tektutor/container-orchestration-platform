@@ -1393,3 +1393,305 @@ unset SA TOKEN
 | Give each application its own service account | You can grant and revoke its access separately |
 | Start from `view` or a custom role, not `edit` or `admin` | Least privilege limits the damage from a stolen token |
 | Give `view` instead of `edit` to people who only need to look | `view` hides secrets |
+
+## Lab - Taints and Tolerations
+<pre>
+- By default, OpenShift won't schedule your application pods on master nodes
+- The masters carry a taint, and a pod lands on a tainted node only if it tolerates that taint
+- In this lab we make user pods run on the master nodes in two ways
+  - 1. Add a toleration to a single deployment (you can do this yourself)
+  - 2. Make all the masters schedulable for the whole cluster (I'll do this part, as it needs cluster-admin)
+</pre>
+
+Use your name in the project name, for example `uday-taint`. I use `jegan-taint` in the commands below.
+<pre>
+- Please don't try this on a production cluster. 
+- The masters run etcd and the API server, and a heavy application pod there can slow down the entire cluster
+</pre>
+
+Check the nodes and their taints
+```
+oc get nodes
+```
+
+Sample output
+<pre>
+NAME                        STATUS   ROLES                  AGE   VERSION
+master01.ocp4.palmeto.org   Ready    control-plane,master   30d   v1.35.x
+master02.ocp4.palmeto.org   Ready    control-plane,master   30d   v1.35.x
+master03.ocp4.palmeto.org   Ready    control-plane,master   30d   v1.35.x
+worker01.ocp4.palmeto.org   Ready    worker                 30d   v1.35.x
+worker02.ocp4.palmeto.org   Ready    worker                 30d   v1.35.x
+</pre>
+
+Now list the taints on each node
+```
+oc get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .spec.taints[*]}{.key}:{.effect} {end}{"\n"}{end}'
+```
+
+Sample output
+<pre>
+master01.ocp4.palmeto.org   node-role.kubernetes.io/master:NoSchedule
+master02.ocp4.palmeto.org   node-role.kubernetes.io/master:NoSchedule
+master03.ocp4.palmeto.org   node-role.kubernetes.io/master:NoSchedule
+worker01.ocp4.palmeto.org
+worker02.ocp4.palmeto.org
+</pre>
+
+<pre>
+- A taint is written as `key=value:effect`
+- The master taint has no value
+- The effect `NoSchedule` tells the scheduler not to place any new pod on this node unless 
+  the pod tolerates the taint
+- The workers have no taint, which is why all your pods end up there
+- If you don't see any taint on the masters and their role also shows `worker`, the masters are 
+  already schedulable
+</pre>
+
+Create your project
+```
+oc new-project jegan-taint
+```
+
+Deploy on the masters without a toleration
+Let's first see what happens when we ask for the master nodes without tolerating their taint.
+```
+cat <<'EOF' | oc apply -n jegan-taint -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: on-master
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: on-master
+  template:
+    metadata:
+      labels:
+        app: on-master
+    spec:
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      containers:
+      - name: app
+        image: registry.access.redhat.com/ubi9/ubi-minimal
+        command: ["tail", "-f", "/dev/null"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+EOF
+```
+
+```
+oc get pods -n jegan-taint -o wide
+```
+
+Sample output
+<pre>
+NAME                         READY   STATUS    RESTARTS   AGE   IP       NODE
+on-master-7c9d5b8f6d-4kx2m   0/1     Pending   0          15s   &lt;none&gt;   &lt;none&gt;
+on-master-7c9d5b8f6d-9tq7w   0/1     Pending   0          15s   &lt;none&gt;   &lt;none&gt;
+on-master-7c9d5b8f6d-zr5hn   0/1     Pending   0          15s   &lt;none&gt;   &lt;none&gt;
+</pre>
+
+All three pods are stuck in Pending. Let's ask the scheduler why.
+```
+oc get events -n jegan-taint --field-selector reason=FailedScheduling \
+  -o custom-columns=MESSAGE:.message | tail -1
+```
+
+Sample output
+<pre>
+0/5 nodes are available: 2 node(s) didn't match Pod's node affinity/selector,
+3 node(s) had untolerated taint {node-role.kubernetes.io/master: }. ...
+</pre>
+
+<pre>
+- Read the message carefully. The workers don't match our `nodeSelector`, and the masters 
+  reject the pods because of the taint. That leaves no node for our pods
+</pre>
+
+Method 1 - Add a toleration to the deployment
+```
+oc patch deployment on-master -n jegan-taint --type=merge -p '{
+  "spec":{"template":{"spec":{"tolerations":[
+    {"key":"node-role.kubernetes.io/master","operator":"Exists","effect":"NoSchedule"},
+    {"key":"node-role.kubernetes.io/control-plane","operator":"Exists","effect":"NoSchedule"}
+  ]}}}}'
+```
+
+```
+oc rollout status deployment/on-master -n jegan-taint
+oc get pods -n jegan-taint -o wide
+```
+
+Sample output
+<pre>
+NAME                         READY   STATUS    RESTARTS   AGE   IP            NODE
+on-master-5f8b6c7d9c-2hxqv   1/1     Running   0          20s   10.128.0.54   master01.ocp4.palmeto.org
+on-master-5f8b6c7d9c-8wlpz   1/1     Running   0          18s   10.129.0.61   master02.ocp4.palmeto.org
+on-master-5f8b6c7d9c-q4n7t   1/1     Running   0          16s   10.130.0.47   master03.ocp4.palmeto.org
+</pre>
+
+The pods are running on the masters now.
+<pre>
+A few points about the toleration:
+- `operator: Exists` matches the key irrespective of its value, which suits the master 
+  taint as it has no value
+- I have added the `control-plane` key as well. Some clusters taint the masters with that key
+- Tolerating a taint that isn't present does no harm.
+- Never write a toleration with `operator: Exists` and no key. That tolerates every taint on the cluster, 
+  including the ones OpenShift adds to nodes that are down or under maintenance.
+</pre>
+
+Toleration is not the same as nodeSelector
+<pre>
+- The toleration only allows the pod on a tainted node
+- It doesn't send the pod there. The `nodeSelector` is what sends it
+- Remove the `nodeSelector` and watch where the pods go.
+</pre>
+
+```
+oc patch deployment on-master -n jegan-taint --type=json \
+  -p '[{"op":"remove","path":"/spec/template/spec/nodeSelector"}]'
+
+oc rollout status deployment/on-master -n jegan-taint
+oc get pods -n jegan-taint -o wide
+```
+<pre>
+- This time the pods spread across masters and workers, wherever the scheduler finds room
+- If you want pods only on the masters, you need both the toleration and the `nodeSelector`.
+</pre>
+
+Delete the deployment before we move on.
+```
+oc delete deployment on-master -n jegan-taint
+```
+
+Method 2 - Make the masters schedulable (cluster-admin)
+<pre>
+- I'll run this on server1 and server2, as it changes the scheduler setting for the whole cluster
+- If each of you runs it, you will keep flipping it for everyone else
+</pre>
+```
+oc patch schedulers.config.openshift.io cluster --type=merge \
+  -p '{"spec":{"mastersSchedulable":true}}'
+```
+
+Give it a minute, then check the nodes and taints again.
+```
+oc get nodes
+oc get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .spec.taints[*]}{.key}:{.effect} {end}{"\n"}{end}'
+```
+
+Sample output
+<pre>
+NAME                        STATUS   ROLES                         AGE   VERSION
+master01.ocp4.palmeto.org   Ready    control-plane,master,worker   30d   v1.35.x
+master02.ocp4.palmeto.org   Ready    control-plane,master,worker   30d   v1.35.x
+master03.ocp4.palmeto.org   Ready    control-plane,master,worker   30d   v1.35.x
+...
+
+master01.ocp4.palmeto.org
+master02.ocp4.palmeto.org
+master03.ocp4.palmeto.org
+</pre>
+
+The masters have picked up the `worker` role and the taint is gone.
+<pre>
+- You may find blogs that remove the taint by hand with `oc adm taint, don't do that on OpenShift
+- The `mastersSchedulable` setting is the supported way, and a taint you remove by hand can come back, 
+  for instance when the node registers again after a reboot or an upgrade.
+</pre>
+
+Now deploy with no toleration at all.
+```
+cat <<'EOF' | oc apply -n jegan-taint -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: no-toleration
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: no-toleration
+  template:
+    metadata:
+      labels:
+        app: no-toleration
+    spec:
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      containers:
+      - name: app
+        image: registry.access.redhat.com/ubi9/ubi-minimal
+        command: ["tail", "-f", "/dev/null"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+EOF
+```
+
+```
+oc rollout status deployment/no-toleration -n jegan-taint
+oc get pods -n jegan-taint -o wide
+```
+
+All three pods should be running on the masters. This is the same spec that stayed Pending earlier.
+
+Put the taint back (cluster-admin)
+
+Again, I'll run this one.
+```
+oc patch schedulers.config.openshift.io cluster --type=merge \
+  -p '{"spec":{"mastersSchedulable":false}}'
+```
+
+After a minute the taint is back on the masters. Now check your pods.
+```
+oc get pods -n jegan-taint -o wide
+```
+<pre>
+- Surprised? Your pods are still running on the masters. 
+- `NoSchedule` only stops new pods from being placed, it doesn't evict pods that are already running
+</pre>
+
+Restart the deployment and see what happens to the new pods.
+```
+oc rollout restart deployment/no-toleration -n jegan-taint
+oc get pods -n jegan-taint -o wide
+```
+
+The new pods go back to Pending, as the masters are tainted again.
+<pre>
+- If you want running pods to be evicted as well, the taint must use the `NoExecute` effect
+- OpenShift uses it on nodes that stop responding, for example `node.kubernetes.io/unreachable:NoExecute`, 
+  so that their pods get rescheduled elsewhere
+</pre>
+
+Quick reference on the three effects:
+| Effect | New pods without toleration | Pods already running |
+|---|---|---|
+| PreferNoSchedule | Avoided if another node is available | Keep running |
+| NoSchedule | Not scheduled | Keep running |
+| NoExecute | Not scheduled | Evicted |
+
+## Cleanup
+```
+oc delete project jegan-taint
+```
+
+I'll confirm the scheduler setting is back to `false` at my end.
+```
+oc get schedulers.config.openshift.io cluster -o jsonpath='{.spec.mastersSchedulable}{"\n"}'
+```
