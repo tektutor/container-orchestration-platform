@@ -641,8 +641,6 @@ In this lab you see how OpenShift protects the cluster from applications (Securi
 
 Replace `jegan` with your own name in every command, for example `uday-app`.
 
----
-
 Step 1: Create a project and deploy an application
 
 ```
@@ -696,8 +694,6 @@ Expected (similar to)
 </pre>
 
 Every project gets a different range. If an attacker breaks out of a container, they land as a user that owns nothing on the node and nothing in any other project.
-
----
 
 Step 3: See which security policy admitted the pod
 
@@ -878,7 +874,7 @@ The deployment creates a replacement pod, so the application keeps running:
 oc get pods -n jegan-app -l app=web
 ```
 
-## Step 9: Review and revoke access
+Step 9: Review and revoke access
 
 List who has which role in the project:
 ```
@@ -910,7 +906,7 @@ The token is still valid, but it no longer grants anything. RBAC is checked on e
 so revoking a binding takes effect immediately.
 
 
-## Step 10: Clean up
+Step 10: Clean up
 
 ```
 oc delete project jegan-app
@@ -1069,7 +1065,7 @@ Step 10: Clean up
 cd ~ && rm -rf ~/jegan-x509-lab
 ```
 
-## Summary
+Summary
 
 | File | What it is | Share it? |
 |---|---|---|
