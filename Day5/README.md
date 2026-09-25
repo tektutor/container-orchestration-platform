@@ -525,7 +525,7 @@ oc adm policy remove-cluster-role-from-user system:auth-delegator -z inventory-a
 oc delete project jegan-shop
 ```
 
-# Lab: X.509 Certificates
+## Lab: X.509 Certificates
 
 In this lab you create your own Certificate Authority (CA), issue a server certificate, inspect it, verify it, and use it in a real TLS connection. You also see the three most common certificate errors.
 
@@ -533,13 +533,13 @@ Replace `jegan` with your own name in every command, for example `uday-x509-lab`
 
 You need `openssl` and `curl`. Ubuntu 24.04 and RHEL 9 have both.
 
-## Step 1: Create a working folder
+Step 1: Create a working folder
 
 ```
 mkdir -p ~/jegan-x509-lab && cd ~/jegan-x509-lab
 ```
 
-## Step 2: Create your own CA
+Step 2: Create your own CA
 
 A CA is a key pair plus a self-signed certificate. Its only job is to sign other certificates.
 
@@ -567,7 +567,7 @@ X509v3 Basic Constraints: critical
 
 `subject` and `issuer` are the same, so the certificate is self-signed. `CA:TRUE` allows it to sign other certificates.
 
-## Step 3: Create a key and a certificate request for the server
+Step 3: Create a key and a certificate request for the server
 
 The server creates its own private key. It sends only a Certificate Signing Request (CSR) to the CA. The private key never leaves the server.
 
@@ -587,7 +587,7 @@ Certificate request self-signature verify OK
 subject=CN = web.jegan.lab
 </pre>
 
-## Step 4: Sign the request with your CA
+Step 4: Sign the request with your CA
 
 Browsers and `curl` check the Subject Alternative Name (SAN), not the CN. List every name and IP clients will use to reach the server.
 
@@ -609,7 +609,7 @@ Certificate request self-signature ok
 subject=CN = web.jegan.lab
 </pre>
 
-## Step 5: Inspect the server certificate
+Step 5: Inspect the server certificate
 
 ```
 openssl x509 -in server.crt -noout -subject -issuer -serial -dates \
@@ -635,7 +635,7 @@ To see every field, run:
 ```
 openssl x509 -in server.crt -noout -text
 ```
-# Lab: Application Security and Access Control in OpenShift
+## Lab: Application Security and Access Control in OpenShift
 
 In this lab you see how OpenShift protects the cluster from applications (Security Context Constraints) and how it controls who can do what inside a project (RBAC).
 
@@ -643,7 +643,7 @@ Replace `jegan` with your own name in every command, for example `uday-app`.
 
 ---
 
-## Step 1: Create a project and deploy an application
+Step 1: Create a project and deploy an application
 
 ```
 oc new-project jegan-app
@@ -671,9 +671,9 @@ Expected
 
 ---
 
-## Part A: Application security
+Part A: Application security
 
-## Step 2: See which user your application runs as
+Step 2: See which user your application runs as
 
 ```
 oc exec -n jegan-app deploy/web -- id
@@ -699,7 +699,7 @@ Every project gets a different range. If an attacker breaks out of a container, 
 
 ---
 
-## Step 3: See which security policy admitted the pod
+Step 3: See which security policy admitted the pod
 
 ```
 oc get pod -n jegan-app -l app=web \
@@ -713,9 +713,7 @@ restricted-v2
 
 `restricted-v2` is the default Security Context Constraint (SCC). It forbids root, drops all Linux capabilities, blocks privilege escalation and host access, and forces the random UID you saw in Step 2.
 
----
-
-## Step 4: Try to run an application as root
+Step 4: Try to run an application as root
 
 ```
 cat <<'EOF' | oc apply -n jegan-app -f -
@@ -774,9 +772,7 @@ Remove it:
 oc delete deployment root-test -n jegan-app
 ```
 
----
-
-## Part B: Access control (RBAC)
+Part B: Access control (RBAC)
 
 RBAC answers one question for every request: **can this identity do this verb on this resource in this project?**
 
@@ -787,7 +783,7 @@ OpenShift ships ready-made roles: `view` (read, except secrets), `edit` (change 
 
 In this part you use service accounts as test identities, because every trainee can create them.
 
-## Step 5: Create three identities and give them roles
+Step 5: Create three identities and give them roles
 
 ```
 oc create serviceaccount viewer -n jegan-app
@@ -800,9 +796,7 @@ oc policy add-role-to-user edit -z deployer -n jegan-app
 
 `restarter` gets a custom role in Step 7.
 
----
-
-## Step 6: Test what each identity can do
+Step 6: Test what each identity can do
 
 `oc auth can-i --as` asks the API server to check a request as another identity, without running it.
 
@@ -836,9 +830,7 @@ What this shows:
 - `edit` can change applications and read secrets, but **cannot grant access** to anyone else.
 - Both roles apply only inside `jegan-app`. The last check against `default` fails.
 
----
-
-## Step 7: Create a least-privilege role
+Step 7: Create a least-privilege role
 
 Suppose a monitoring job only needs to restart stuck pods. `edit` would give it far too much. Create a role with exactly what it needs:
 
@@ -862,9 +854,7 @@ no
 no
 </pre>
 
----
-
-## Step 8: Use the identity for real
+Step 8: Use the identity for real
 
 `can-i` only asks. Now send real requests with the service account's token:
 
@@ -887,8 +877,6 @@ The deployment creates a replacement pod, so the application keeps running:
 ```
 oc get pods -n jegan-app -l app=web
 ```
-
----
 
 ## Step 9: Review and revoke access
 
@@ -917,9 +905,10 @@ no
 Error from server (Forbidden): pods "web-..." is forbidden: User "system:serviceaccount:jegan-app:restarter" cannot delete resource "pods" ...
 </pre>
 
-The token is still valid, but it no longer grants anything. RBAC is checked on every request, so revoking a binding takes effect immediately.
 
----
+The token is still valid, but it no longer grants anything. RBAC is checked on every request, 
+so revoking a binding takes effect immediately.
+
 
 ## Step 10: Clean up
 
@@ -927,10 +916,7 @@ The token is still valid, but it no longer grants anything. RBAC is checked on e
 oc delete project jegan-app
 unset SA TOKEN
 ```
-
----
-
-## Summary
+Summary
 
 | Control | Question it answers | What you saw |
 |---|---|---|
@@ -946,7 +932,7 @@ unset SA TOKEN
 | Give each application its own service account | You can grant and revoke its access separately |
 | Start from `view` or a custom role, not `edit` or `admin` | Least privilege limits the damage from a stolen token |
 | Give `view` instead of `edit` to people who only need to look | `view` hides secrets |
-## Step 6: Verify the certificate
+Step 6: Verify the certificate
 
 Check that your CA signed it:
 ```
@@ -978,7 +964,7 @@ openssl pkey -in server.key -pubout | sha256sum
 
 A mismatch here is a common reason a web server refuses to start after a certificate renewal.
 
-## Step 7: Check the expiry date
+Step 7: Check the expiry date
 
 `-checkend` takes seconds and tells you whether the certificate expires within that time.
 
@@ -998,7 +984,7 @@ Certificate will expire
 
 The exit code is `0` for "will not expire" and `1` for "will expire", so you can use it in monitoring scripts.
 
-## Step 8: Use the certificate in a real HTTPS server
+Step 8: Use the certificate in a real HTTPS server
 
 Start a test HTTPS server on port 8443 in the background:
 ```
@@ -1053,8 +1039,7 @@ Stop the test server:
 ```
 kill %1
 ```
-
-## Step 9 (optional): Inspect real OpenShift certificates
+Step 9 (optional): Inspect real OpenShift certificates
 
 Use the same commands on a live cluster. Change the cluster domain to match yours.
 
@@ -1079,7 +1064,7 @@ Look for:
 `-servername` sends the host name during the handshake (SNI). The router uses it to pick the right certificate, so leave it out and you may get a different one.
 
 
-## Step 10: Clean up
+Step 10: Clean up
 ```
 cd ~ && rm -rf ~/jegan-x509-lab
 ```
@@ -1109,7 +1094,7 @@ cd ~ && rm -rf ~/jegan-x509-lab
 
 Replace `jegan` with your own name in every command, for example `uday-app`.
 
-## Step 1: Create a project and deploy an application
+Step 1: Create a project and deploy an application
 
 ```
 oc new-project jegan-app
@@ -1135,9 +1120,9 @@ Expected
 
 `-k` skips certificate verification because the router uses the cluster's own CA. See the X.509 lab to verify it properly.
 
-## Part A: Application security
+Part A: Application security
 
-## Step 2: See which user your application runs as
+Step 2: See which user your application runs as
 
 ```
 oc exec -n jegan-app deploy/web -- id
@@ -1161,7 +1146,7 @@ Expected (similar to)
 
 Every project gets a different range. If an attacker breaks out of a container, they land as a user that owns nothing on the node and nothing in any other project.
 
-## Step 3: See which security policy admitted the pod
+Step 3: See which security policy admitted the pod
 
 ```
 oc get pod -n jegan-app -l app=web \
@@ -1175,7 +1160,7 @@ restricted-v2
 
 `restricted-v2` is the default Security Context Constraint (SCC). It forbids root, drops all Linux capabilities, blocks privilege escalation and host access, and forces the random UID you saw in Step 2.
 
-## Step 4: Try to run an application as root
+Step 4: Try to run an application as root
 
 ```
 cat <<'EOF' | oc apply -n jegan-app -f -
@@ -1234,7 +1219,7 @@ Remove it:
 oc delete deployment root-test -n jegan-app
 ```
 
-## Part B: Access control (RBAC)
+Part B: Access control (RBAC)
 
 RBAC answers one question for every request: **can this identity do this verb on this resource in this project?**
 
@@ -1245,7 +1230,7 @@ OpenShift ships ready-made roles: `view` (read, except secrets), `edit` (change 
 
 In this part you use service accounts as test identities, because every trainee can create them.
 
-## Step 5: Create three identities and give them roles
+Step 5: Create three identities and give them roles
 
 ```
 oc create serviceaccount viewer -n jegan-app
@@ -1258,7 +1243,7 @@ oc policy add-role-to-user edit -z deployer -n jegan-app
 
 `restarter` gets a custom role in Step 7.
 
-## Step 6: Test what each identity can do
+Step 6: Test what each identity can do
 
 `oc auth can-i --as` asks the API server to check a request as another identity, without running it.
 
@@ -1292,7 +1277,7 @@ What this shows:
 - `edit` can change applications and read secrets, but **cannot grant access** to anyone else.
 - Both roles apply only inside `jegan-app`. The last check against `default` fails.
 
-## Step 7: Create a least-privilege role
+Step 7: Create a least-privilege role
 
 Suppose a monitoring job only needs to restart stuck pods. `edit` would give it far too much. Create a role with exactly what it needs:
 
@@ -1316,7 +1301,7 @@ no
 no
 </pre>
 
-## Step 8: Use the identity for real
+Step 8: Use the identity for real
 
 `can-i` only asks. Now send real requests with the service account's token:
 
@@ -1340,7 +1325,7 @@ The deployment creates a replacement pod, so the application keeps running:
 oc get pods -n jegan-app -l app=web
 ```
 
-## Step 9: Review and revoke access
+Step 9: Review and revoke access
 
 List who has which role in the project:
 ```
@@ -1369,16 +1354,14 @@ Error from server (Forbidden): pods "web-..." is forbidden: User "system:service
 
 The token is still valid, but it no longer grants anything. RBAC is checked on every request, so revoking a binding takes effect immediately.
 
-
-## Step 10: Clean up
+Step 10: Clean up
 
 ```
 oc delete project jegan-app
 unset SA TOKEN
 ```
 
-## Summary
-
+Summary
 | Control | Question it answers | What you saw |
 |---|---|---|
 | SCC (`restricted-v2`) | What may this **application** do on the node? | Random non-root UID; a root container was refused |
