@@ -880,7 +880,7 @@ Step 1: Create a project and deploy an application
 ```
 oc new-project jegan-app
 
-oc create deployment web --image=registry.access.redhat.com/ubi9/nginx-124 --port=8080 -n jegan-app
+oc create deployment web --image=image-registry.openshift-image-registry.svc:5000/openshift/bitnami-nginx:1.28 --port=8080 -n jegan-app
 oc expose deployment web --port=8080 -n jegan-app
 oc create route edge web --service=web -n jegan-app
 
