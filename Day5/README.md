@@ -635,161 +635,6 @@ To see every field, run:
 ```
 openssl x509 -in server.crt -noout -text
 ```
-
-## Step 6: Verify the certificate
-
-Check that your CA signed it:
-```
-openssl verify -CAfile ca.crt server.crt
-```
-
-Expected
-<pre>
-server.crt: OK
-</pre>
-
-Without the CA, verification fails, because nobody vouches for the certificate:
-```
-openssl verify server.crt
-```
-
-Expected
-<pre>
-CN = web.jegan.lab
-error 20 at 0 depth lookup: unable to get local issuer certificate
-error server.crt: verification failed
-</pre>
-
-Check that the certificate and key belong together. Both hashes must match:
-```
-openssl x509 -in server.crt -noout -pubkey | sha256sum
-openssl pkey -in server.key -pubout | sha256sum
-```
-
-A mismatch here is a common reason a web server refuses to start after a certificate renewal.
-
-## Step 7: Check the expiry date
-
-`-checkend` takes seconds and tells you whether the certificate expires within that time.
-
-```
-# Does it expire within 1 day?
-openssl x509 -in server.crt -noout -checkend 86400
-
-# Does it expire within 1 year?
-openssl x509 -in server.crt -noout -checkend 31536000
-```
-
-Expected
-<pre>
-Certificate will not expire
-Certificate will expire
-</pre>
-
-The exit code is `0` for "will not expire" and `1` for "will expire", so you can use it in monitoring scripts.
-
-## Step 8: Use the certificate in a real HTTPS server
-
-Start a test HTTPS server on port 8443 in the background:
-```
-openssl s_server -accept 8443 -cert server.crt -key server.key -www -quiet >/dev/null 2>&1 &
-```
-
-**Test 1: client trusts your CA and uses a name from the SAN (success)**
-```
-openssl s_client -connect localhost:8443 -CAfile ca.crt -verify_hostname localhost \
-  </dev/null 2>/dev/null | grep -m1 'Verify return code'
-
-curl -sS -o /dev/null -w '%{http_code}\n' --cacert ca.crt https://localhost:8443/
-```
-
-Expected
-<pre>
-Verify return code: 0 (ok)
-200
-</pre>
-
-**Test 2: client does not trust your CA (fails)**
-```
-openssl s_client -connect localhost:8443 </dev/null 2>/dev/null | grep -m1 'Verify return code'
-
-curl -sS -o /dev/null https://localhost:8443/
-```
-
-Expected
-<pre>
-Verify return code: 21 (unable to verify the first certificate)
-curl: (60) SSL certificate problem: unable to get local issuer certificate
-</pre>
-
-**Test 3: client trusts your CA but uses a name not in the SAN (fails)**
-```
-openssl s_client -connect localhost:8443 -CAfile ca.crt -verify_hostname other.jegan.lab \
-  </dev/null 2>/dev/null | grep -m1 'Verify return code'
-
-curl -sS -o /dev/null --cacert ca.crt \
-  --resolve other.jegan.lab:8443:127.0.0.1 https://other.jegan.lab:8443/
-```
-
-Expected
-<pre>
-Verify return code: 62 (hostname mismatch)
-curl: (60) SSL: no alternative certificate subject name matches target host name 'other.jegan.lab'
-</pre>
-
-`--resolve` points the name at 127.0.0.1 without editing `/etc/hosts`.
-
-Stop the test server:
-```
-kill %1
-```
-
-## Step 9 (optional): Inspect real OpenShift certificates
-
-Use the same commands on a live cluster. Change the cluster domain to match yours.
-
-The API server certificate:
-```
-openssl s_client -connect api.ocp4.palmeto.org:6443 </dev/null 2>/dev/null \
-  | openssl x509 -noout -subject -issuer -dates -ext subjectAltName
-```
-
-The router (ingress) certificate, which serves every route:
-```
-openssl s_client -connect console-openshift-console.apps.ocp4.palmeto.org:443 \
-  -servername console-openshift-console.apps.ocp4.palmeto.org </dev/null 2>/dev/null \
-  | openssl x509 -noout -subject -issuer -dates -ext subjectAltName
-```
-
-Look for:
-- `issuer`: on a default install, an internal OpenShift signer, not a public CA
-- `subjectAltName`: the router certificate holds a wildcard such as `DNS:*.apps.ocp4.palmeto.org`, so one certificate covers every route
-- `notAfter`: when it expires
-
-`-servername` sends the host name during the handshake (SNI). The router uses it to pick the right certificate, so leave it out and you may get a different one.
-
-
-## Step 10: Clean up
-```
-cd ~ && rm -rf ~/jegan-x509-lab
-```
-
-## Summary
-
-| File | What it is | Share it? |
-|---|---|---|
-| `ca.key` | CA private key | Never. Anyone with it can issue trusted certificates |
-| `ca.crt` | CA certificate | Yes. Clients need it to trust your server |
-| `server.key` | Server private key | Never. It stays on the server |
-| `server.csr` | Signing request | Yes, to the CA. Not needed after signing |
-| `server.crt` | Server certificate | Yes. The server sends it to every client |
-
-| Error | Meaning | Fix |
-|---|---|---|
-| `unable to get local issuer certificate` (20 or 21) | Client does not trust the issuing CA | Give the client `ca.crt` |
-| `hostname mismatch` (62), `no alternative certificate subject name matches` | Name the client used is not in the SAN | Reissue with the name added to `subjectAltName` |
-| `certificate has expired` (10) | `notAfter` has passed | Reissue and redeploy; monitor with `-checkend` |
-
 # Lab: Application Security and Access Control in OpenShift
 
 In this lab you see how OpenShift protects the cluster from applications (Security Context Constraints) and how it controls who can do what inside a project (RBAC).
@@ -1084,6 +929,453 @@ unset SA TOKEN
 ```
 
 ---
+
+## Summary
+
+| Control | Question it answers | What you saw |
+|---|---|---|
+| SCC (`restricted-v2`) | What may this **application** do on the node? | Random non-root UID; a root container was refused |
+| Role / RoleBinding | What may this **identity** do in this project? | `view`, `edit` and a custom role gave three different sets of rights |
+| `oc auth can-i` | Would this request be allowed? | Test access without making changes |
+| `oc adm policy who-can` | Who is allowed to do this? | Audit access from the resource side |
+
+| Good practice | Why |
+|---|---|
+| Build images that run as any non-root UID | They work under `restricted-v2` without extra SCCs |
+| Never grant `anyuid` or `privileged` to fix a failing image | Fix the image instead; those SCCs remove the node protection |
+| Give each application its own service account | You can grant and revoke its access separately |
+| Start from `view` or a custom role, not `edit` or `admin` | Least privilege limits the damage from a stolen token |
+| Give `view` instead of `edit` to people who only need to look | `view` hides secrets |
+## Step 6: Verify the certificate
+
+Check that your CA signed it:
+```
+openssl verify -CAfile ca.crt server.crt
+```
+
+Expected
+<pre>
+server.crt: OK
+</pre>
+
+Without the CA, verification fails, because nobody vouches for the certificate:
+```
+openssl verify server.crt
+```
+
+Expected
+<pre>
+CN = web.jegan.lab
+error 20 at 0 depth lookup: unable to get local issuer certificate
+error server.crt: verification failed
+</pre>
+
+Check that the certificate and key belong together. Both hashes must match:
+```
+openssl x509 -in server.crt -noout -pubkey | sha256sum
+openssl pkey -in server.key -pubout | sha256sum
+```
+
+A mismatch here is a common reason a web server refuses to start after a certificate renewal.
+
+## Step 7: Check the expiry date
+
+`-checkend` takes seconds and tells you whether the certificate expires within that time.
+
+```
+# Does it expire within 1 day?
+openssl x509 -in server.crt -noout -checkend 86400
+
+# Does it expire within 1 year?
+openssl x509 -in server.crt -noout -checkend 31536000
+```
+
+Expected
+<pre>
+Certificate will not expire
+Certificate will expire
+</pre>
+
+The exit code is `0` for "will not expire" and `1` for "will expire", so you can use it in monitoring scripts.
+
+## Step 8: Use the certificate in a real HTTPS server
+
+Start a test HTTPS server on port 8443 in the background:
+```
+openssl s_server -accept 8443 -cert server.crt -key server.key -www -quiet >/dev/null 2>&1 &
+```
+
+**Test 1: client trusts your CA and uses a name from the SAN (success)**
+```
+openssl s_client -connect localhost:8443 -CAfile ca.crt -verify_hostname localhost \
+  </dev/null 2>/dev/null | grep -m1 'Verify return code'
+
+curl -sS -o /dev/null -w '%{http_code}\n' --cacert ca.crt https://localhost:8443/
+```
+
+Expected
+<pre>
+Verify return code: 0 (ok)
+200
+</pre>
+
+**Test 2: client does not trust your CA (fails)**
+```
+openssl s_client -connect localhost:8443 </dev/null 2>/dev/null | grep -m1 'Verify return code'
+
+curl -sS -o /dev/null https://localhost:8443/
+```
+
+Expected
+<pre>
+Verify return code: 21 (unable to verify the first certificate)
+curl: (60) SSL certificate problem: unable to get local issuer certificate
+</pre>
+
+**Test 3: client trusts your CA but uses a name not in the SAN (fails)**
+```
+openssl s_client -connect localhost:8443 -CAfile ca.crt -verify_hostname other.jegan.lab \
+  </dev/null 2>/dev/null | grep -m1 'Verify return code'
+
+curl -sS -o /dev/null --cacert ca.crt \
+  --resolve other.jegan.lab:8443:127.0.0.1 https://other.jegan.lab:8443/
+```
+
+Expected
+<pre>
+Verify return code: 62 (hostname mismatch)
+curl: (60) SSL: no alternative certificate subject name matches target host name 'other.jegan.lab'
+</pre>
+
+`--resolve` points the name at 127.0.0.1 without editing `/etc/hosts`.
+
+Stop the test server:
+```
+kill %1
+```
+
+## Step 9 (optional): Inspect real OpenShift certificates
+
+Use the same commands on a live cluster. Change the cluster domain to match yours.
+
+The API server certificate:
+```
+openssl s_client -connect api.ocp4.palmeto.org:6443 </dev/null 2>/dev/null \
+  | openssl x509 -noout -subject -issuer -dates -ext subjectAltName
+```
+
+The router (ingress) certificate, which serves every route:
+```
+openssl s_client -connect console-openshift-console.apps.ocp4.palmeto.org:443 \
+  -servername console-openshift-console.apps.ocp4.palmeto.org </dev/null 2>/dev/null \
+  | openssl x509 -noout -subject -issuer -dates -ext subjectAltName
+```
+
+Look for:
+- `issuer`: on a default install, an internal OpenShift signer, not a public CA
+- `subjectAltName`: the router certificate holds a wildcard such as `DNS:*.apps.ocp4.palmeto.org`, so one certificate covers every route
+- `notAfter`: when it expires
+
+`-servername` sends the host name during the handshake (SNI). The router uses it to pick the right certificate, so leave it out and you may get a different one.
+
+
+## Step 10: Clean up
+```
+cd ~ && rm -rf ~/jegan-x509-lab
+```
+
+## Summary
+
+| File | What it is | Share it? |
+|---|---|---|
+| `ca.key` | CA private key | Never. Anyone with it can issue trusted certificates |
+| `ca.crt` | CA certificate | Yes. Clients need it to trust your server |
+| `server.key` | Server private key | Never. It stays on the server |
+| `server.csr` | Signing request | Yes, to the CA. Not needed after signing |
+| `server.crt` | Server certificate | Yes. The server sends it to every client |
+
+| Error | Meaning | Fix |
+|---|---|---|
+| `unable to get local issuer certificate` (20 or 21) | Client does not trust the issuing CA | Give the client `ca.crt` |
+| `hostname mismatch` (62), `no alternative certificate subject name matches` | Name the client used is not in the SAN | Reissue with the name added to `subjectAltName` |
+| `certificate has expired` (10) | `notAfter` has passed | Reissue and redeploy; monitor with `-checkend` |
+
+## Lab: Application Security and Access Control in OpenShift
+
+<pre>
+- In this lab you see how OpenShift protects the cluster from applications (Security Context Constraints) 
+  and how it controls who can do what inside a project (RBAC).
+</pre>
+
+Replace `jegan` with your own name in every command, for example `uday-app`.
+
+## Step 1: Create a project and deploy an application
+
+```
+oc new-project jegan-app
+
+oc create deployment web --image=registry.access.redhat.com/ubi9/nginx-124 --port=8080 -n jegan-app
+oc expose deployment web --port=8080 -n jegan-app
+oc create route edge web --service=web -n jegan-app
+
+oc rollout status deployment/web -n jegan-app
+```
+
+`oc create deployment` may print a `PodSecurity` warning. You can ignore it here: OpenShift fills in the missing security settings when it admits the pod.
+
+Test the application through its HTTPS route:
+```
+curl -sk -o /dev/null -w '%{http_code}\n' https://$(oc get route web -n jegan-app -o jsonpath='{.spec.host}')
+```
+
+Expected
+<pre>
+200
+</pre>
+
+`-k` skips certificate verification because the router uses the cluster's own CA. See the X.509 lab to verify it properly.
+
+## Part A: Application security
+
+## Step 2: See which user your application runs as
+
+```
+oc exec -n jegan-app deploy/web -- id
+```
+
+Expected (the number differs per project)
+<pre>
+uid=1000680000(1000680000) gid=0(root) groups=0(root),1000680000
+</pre>
+
+OpenShift did not use the user from the image. It assigned a random high UID from a range reserved for this project:
+
+```
+oc get project jegan-app -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.uid-range}{"\n"}'
+```
+
+Expected (similar to)
+<pre>
+1000680000/10000
+</pre>
+
+Every project gets a different range. If an attacker breaks out of a container, they land as a user that owns nothing on the node and nothing in any other project.
+
+## Step 3: See which security policy admitted the pod
+
+```
+oc get pod -n jegan-app -l app=web \
+  -o jsonpath='{.items[0].metadata.annotations.openshift\.io/scc}{"\n"}'
+```
+
+Expected
+<pre>
+restricted-v2
+</pre>
+
+`restricted-v2` is the default Security Context Constraint (SCC). It forbids root, drops all Linux capabilities, blocks privilege escalation and host access, and forces the random UID you saw in Step 2.
+
+## Step 4: Try to run an application as root
+
+```
+cat <<'EOF' | oc apply -n jegan-app -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: root-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: root-test
+  template:
+    metadata:
+      labels:
+        app: root-test
+    spec:
+      containers:
+      - name: app
+        image: registry.access.redhat.com/ubi9/ubi-minimal
+        command: ["tail", "-f", "/dev/null"]
+        securityContext:
+          runAsUser: 0
+EOF
+```
+
+Check the result:
+```
+oc get deployment root-test -n jegan-app
+```
+
+Expected
+<pre>
+NAME        READY   UP-TO-DATE   AVAILABLE   AGE
+root-test   0/1     0            0           20s
+</pre>
+
+Find out why:
+```
+oc get events -n jegan-app --field-selector reason=FailedCreate \
+  -o custom-columns=MESSAGE:.message | tail -1
+```
+
+Expected (shortened)
+<pre>
+pods "root-test-..." is forbidden: unable to validate against any security context constraint:
+... runAsUser: Invalid value: 0: must be in the ranges: [1000680000, 1000689999] ...
+</pre>
+
+OpenShift refused to create the pod at all. The request to run as UID 0 never reached a node.
+
+We use a Deployment on purpose. Pods it creates are checked against the permissions of the service account (`default`), which can only use `restricted-v2`. A pod you create directly as `cluster-admin` would be checked against your own permissions and could be admitted.
+
+Remove it:
+```
+oc delete deployment root-test -n jegan-app
+```
+
+## Part B: Access control (RBAC)
+
+RBAC answers one question for every request: **can this identity do this verb on this resource in this project?**
+
+- A **Role** lists allowed verbs on resources, such as `get`, `list`, `delete` on `pods`.
+- A **RoleBinding** gives a Role to a user, group or service account in one project.
+
+OpenShift ships ready-made roles: `view` (read, except secrets), `edit` (change apps, except RBAC), and `admin` (everything in the project).
+
+In this part you use service accounts as test identities, because every trainee can create them.
+
+## Step 5: Create three identities and give them roles
+
+```
+oc create serviceaccount viewer -n jegan-app
+oc create serviceaccount deployer -n jegan-app
+oc create serviceaccount restarter -n jegan-app
+
+oc policy add-role-to-user view -z viewer -n jegan-app
+oc policy add-role-to-user edit -z deployer -n jegan-app
+```
+
+`restarter` gets a custom role in Step 7.
+
+## Step 6: Test what each identity can do
+
+`oc auth can-i --as` asks the API server to check a request as another identity, without running it.
+
+```
+SA=system:serviceaccount:jegan-app
+
+oc auth can-i list pods      -n jegan-app --as=$SA:viewer
+oc auth can-i delete pods    -n jegan-app --as=$SA:viewer
+oc auth can-i get secrets    -n jegan-app --as=$SA:viewer
+
+oc auth can-i delete pods    -n jegan-app --as=$SA:deployer
+oc auth can-i get secrets    -n jegan-app --as=$SA:deployer
+oc auth can-i create rolebindings -n jegan-app --as=$SA:deployer
+
+oc auth can-i list pods      -n default   --as=$SA:deployer
+```
+
+Expected
+<pre>
+yes
+no
+no
+yes
+yes
+no
+no
+</pre>
+
+What this shows:
+- `view` can read pods but **cannot read secrets**, so you can safely give it to auditors and support teams.
+- `edit` can change applications and read secrets, but **cannot grant access** to anyone else.
+- Both roles apply only inside `jegan-app`. The last check against `default` fails.
+
+## Step 7: Create a least-privilege role
+
+Suppose a monitoring job only needs to restart stuck pods. `edit` would give it far too much. Create a role with exactly what it needs:
+
+```
+oc create role pod-restarter --verb=get,list,delete --resource=pods -n jegan-app
+oc create rolebinding restarter-binding --role=pod-restarter \
+  --serviceaccount=jegan-app:restarter -n jegan-app
+```
+
+Test it:
+```
+oc auth can-i delete pods         -n jegan-app --as=$SA:restarter
+oc auth can-i delete deployments  -n jegan-app --as=$SA:restarter
+oc auth can-i get secrets         -n jegan-app --as=$SA:restarter
+```
+
+Expected
+<pre>
+yes
+no
+no
+</pre>
+
+## Step 8: Use the identity for real
+
+`can-i` only asks. Now send real requests with the service account's token:
+
+```
+TOKEN=$(oc create token restarter -n jegan-app)
+
+oc --token="$TOKEN" delete pod -l app=web -n jegan-app
+oc --token="$TOKEN" get secrets -n jegan-app
+oc --token="$TOKEN" delete deployment web -n jegan-app
+```
+
+Expected (pod name differs)
+<pre>
+pod "web-6d8f7c9b5d-x2kqp" deleted
+Error from server (Forbidden): secrets is forbidden: User "system:serviceaccount:jegan-app:restarter" cannot list resource "secrets" in API group "" in the namespace "jegan-app"
+Error from server (Forbidden): deployments.apps "web" is forbidden: User "system:serviceaccount:jegan-app:restarter" cannot delete resource "deployments" in API group "apps" in the namespace "jegan-app"
+</pre>
+
+The deployment creates a replacement pod, so the application keeps running:
+```
+oc get pods -n jegan-app -l app=web
+```
+
+## Step 9: Review and revoke access
+
+List who has which role in the project:
+```
+oc get rolebindings -n jegan-app -o wide
+```
+
+Ask the reverse question: who can delete pods here?
+```
+oc adm policy who-can delete pods -n jegan-app
+```
+
+Look for `restarter` and `deployer` in the service account list.
+
+Revoke `restarter` and check again:
+```
+oc delete rolebinding restarter-binding -n jegan-app
+oc auth can-i delete pods -n jegan-app --as=$SA:restarter
+oc --token="$TOKEN" delete pod -l app=web -n jegan-app
+```
+
+Expected
+<pre>
+no
+Error from server (Forbidden): pods "web-..." is forbidden: User "system:serviceaccount:jegan-app:restarter" cannot delete resource "pods" ...
+</pre>
+
+The token is still valid, but it no longer grants anything. RBAC is checked on every request, so revoking a binding takes effect immediately.
+
+
+## Step 10: Clean up
+
+```
+oc delete project jegan-app
+unset SA TOKEN
+```
 
 ## Summary
 
