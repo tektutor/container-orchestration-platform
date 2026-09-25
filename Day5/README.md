@@ -790,3 +790,314 @@ cd ~ && rm -rf ~/jegan-x509-lab
 | `hostname mismatch` (62), `no alternative certificate subject name matches` | Name the client used is not in the SAN | Reissue with the name added to `subjectAltName` |
 | `certificate has expired` (10) | `notAfter` has passed | Reissue and redeploy; monitor with `-checkend` |
 
+# Lab: Application Security and Access Control in OpenShift
+
+In this lab you see how OpenShift protects the cluster from applications (Security Context Constraints) and how it controls who can do what inside a project (RBAC).
+
+Replace `jegan` with your own name in every command, for example `uday-app`.
+
+---
+
+## Step 1: Create a project and deploy an application
+
+```
+oc new-project jegan-app
+
+oc create deployment web --image=registry.access.redhat.com/ubi9/nginx-124 --port=8080 -n jegan-app
+oc expose deployment web --port=8080 -n jegan-app
+oc create route edge web --service=web -n jegan-app
+
+oc rollout status deployment/web -n jegan-app
+```
+
+`oc create deployment` may print a `PodSecurity` warning. You can ignore it here: OpenShift fills in the missing security settings when it admits the pod.
+
+Test the application through its HTTPS route:
+```
+curl -sk -o /dev/null -w '%{http_code}\n' https://$(oc get route web -n jegan-app -o jsonpath='{.spec.host}')
+```
+
+Expected
+<pre>
+200
+</pre>
+
+`-k` skips certificate verification because the router uses the cluster's own CA. See the X.509 lab to verify it properly.
+
+---
+
+## Part A: Application security
+
+## Step 2: See which user your application runs as
+
+```
+oc exec -n jegan-app deploy/web -- id
+```
+
+Expected (the number differs per project)
+<pre>
+uid=1000680000(1000680000) gid=0(root) groups=0(root),1000680000
+</pre>
+
+OpenShift did not use the user from the image. It assigned a random high UID from a range reserved for this project:
+
+```
+oc get project jegan-app -o jsonpath='{.metadata.annotations.openshift\.io/sa\.scc\.uid-range}{"\n"}'
+```
+
+Expected (similar to)
+<pre>
+1000680000/10000
+</pre>
+
+Every project gets a different range. If an attacker breaks out of a container, they land as a user that owns nothing on the node and nothing in any other project.
+
+---
+
+## Step 3: See which security policy admitted the pod
+
+```
+oc get pod -n jegan-app -l app=web \
+  -o jsonpath='{.items[0].metadata.annotations.openshift\.io/scc}{"\n"}'
+```
+
+Expected
+<pre>
+restricted-v2
+</pre>
+
+`restricted-v2` is the default Security Context Constraint (SCC). It forbids root, drops all Linux capabilities, blocks privilege escalation and host access, and forces the random UID you saw in Step 2.
+
+---
+
+## Step 4: Try to run an application as root
+
+```
+cat <<'EOF' | oc apply -n jegan-app -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: root-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: root-test
+  template:
+    metadata:
+      labels:
+        app: root-test
+    spec:
+      containers:
+      - name: app
+        image: registry.access.redhat.com/ubi9/ubi-minimal
+        command: ["tail", "-f", "/dev/null"]
+        securityContext:
+          runAsUser: 0
+EOF
+```
+
+Check the result:
+```
+oc get deployment root-test -n jegan-app
+```
+
+Expected
+<pre>
+NAME        READY   UP-TO-DATE   AVAILABLE   AGE
+root-test   0/1     0            0           20s
+</pre>
+
+Find out why:
+```
+oc get events -n jegan-app --field-selector reason=FailedCreate \
+  -o custom-columns=MESSAGE:.message | tail -1
+```
+
+Expected (shortened)
+<pre>
+pods "root-test-..." is forbidden: unable to validate against any security context constraint:
+... runAsUser: Invalid value: 0: must be in the ranges: [1000680000, 1000689999] ...
+</pre>
+
+OpenShift refused to create the pod at all. The request to run as UID 0 never reached a node.
+
+We use a Deployment on purpose. Pods it creates are checked against the permissions of the service account (`default`), which can only use `restricted-v2`. A pod you create directly as `cluster-admin` would be checked against your own permissions and could be admitted.
+
+Remove it:
+```
+oc delete deployment root-test -n jegan-app
+```
+
+---
+
+## Part B: Access control (RBAC)
+
+RBAC answers one question for every request: **can this identity do this verb on this resource in this project?**
+
+- A **Role** lists allowed verbs on resources, such as `get`, `list`, `delete` on `pods`.
+- A **RoleBinding** gives a Role to a user, group or service account in one project.
+
+OpenShift ships ready-made roles: `view` (read, except secrets), `edit` (change apps, except RBAC), and `admin` (everything in the project).
+
+In this part you use service accounts as test identities, because every trainee can create them.
+
+## Step 5: Create three identities and give them roles
+
+```
+oc create serviceaccount viewer -n jegan-app
+oc create serviceaccount deployer -n jegan-app
+oc create serviceaccount restarter -n jegan-app
+
+oc policy add-role-to-user view -z viewer -n jegan-app
+oc policy add-role-to-user edit -z deployer -n jegan-app
+```
+
+`restarter` gets a custom role in Step 7.
+
+---
+
+## Step 6: Test what each identity can do
+
+`oc auth can-i --as` asks the API server to check a request as another identity, without running it.
+
+```
+SA=system:serviceaccount:jegan-app
+
+oc auth can-i list pods      -n jegan-app --as=$SA:viewer
+oc auth can-i delete pods    -n jegan-app --as=$SA:viewer
+oc auth can-i get secrets    -n jegan-app --as=$SA:viewer
+
+oc auth can-i delete pods    -n jegan-app --as=$SA:deployer
+oc auth can-i get secrets    -n jegan-app --as=$SA:deployer
+oc auth can-i create rolebindings -n jegan-app --as=$SA:deployer
+
+oc auth can-i list pods      -n default   --as=$SA:deployer
+```
+
+Expected
+<pre>
+yes
+no
+no
+yes
+yes
+no
+no
+</pre>
+
+What this shows:
+- `view` can read pods but **cannot read secrets**, so you can safely give it to auditors and support teams.
+- `edit` can change applications and read secrets, but **cannot grant access** to anyone else.
+- Both roles apply only inside `jegan-app`. The last check against `default` fails.
+
+---
+
+## Step 7: Create a least-privilege role
+
+Suppose a monitoring job only needs to restart stuck pods. `edit` would give it far too much. Create a role with exactly what it needs:
+
+```
+oc create role pod-restarter --verb=get,list,delete --resource=pods -n jegan-app
+oc create rolebinding restarter-binding --role=pod-restarter \
+  --serviceaccount=jegan-app:restarter -n jegan-app
+```
+
+Test it:
+```
+oc auth can-i delete pods         -n jegan-app --as=$SA:restarter
+oc auth can-i delete deployments  -n jegan-app --as=$SA:restarter
+oc auth can-i get secrets         -n jegan-app --as=$SA:restarter
+```
+
+Expected
+<pre>
+yes
+no
+no
+</pre>
+
+---
+
+## Step 8: Use the identity for real
+
+`can-i` only asks. Now send real requests with the service account's token:
+
+```
+TOKEN=$(oc create token restarter -n jegan-app)
+
+oc --token="$TOKEN" delete pod -l app=web -n jegan-app
+oc --token="$TOKEN" get secrets -n jegan-app
+oc --token="$TOKEN" delete deployment web -n jegan-app
+```
+
+Expected (pod name differs)
+<pre>
+pod "web-6d8f7c9b5d-x2kqp" deleted
+Error from server (Forbidden): secrets is forbidden: User "system:serviceaccount:jegan-app:restarter" cannot list resource "secrets" in API group "" in the namespace "jegan-app"
+Error from server (Forbidden): deployments.apps "web" is forbidden: User "system:serviceaccount:jegan-app:restarter" cannot delete resource "deployments" in API group "apps" in the namespace "jegan-app"
+</pre>
+
+The deployment creates a replacement pod, so the application keeps running:
+```
+oc get pods -n jegan-app -l app=web
+```
+
+---
+
+## Step 9: Review and revoke access
+
+List who has which role in the project:
+```
+oc get rolebindings -n jegan-app -o wide
+```
+
+Ask the reverse question: who can delete pods here?
+```
+oc adm policy who-can delete pods -n jegan-app
+```
+
+Look for `restarter` and `deployer` in the service account list.
+
+Revoke `restarter` and check again:
+```
+oc delete rolebinding restarter-binding -n jegan-app
+oc auth can-i delete pods -n jegan-app --as=$SA:restarter
+oc --token="$TOKEN" delete pod -l app=web -n jegan-app
+```
+
+Expected
+<pre>
+no
+Error from server (Forbidden): pods "web-..." is forbidden: User "system:serviceaccount:jegan-app:restarter" cannot delete resource "pods" ...
+</pre>
+
+The token is still valid, but it no longer grants anything. RBAC is checked on every request, so revoking a binding takes effect immediately.
+
+---
+
+## Step 10: Clean up
+
+```
+oc delete project jegan-app
+unset SA TOKEN
+```
+
+---
+
+## Summary
+
+| Control | Question it answers | What you saw |
+|---|---|---|
+| SCC (`restricted-v2`) | What may this **application** do on the node? | Random non-root UID; a root container was refused |
+| Role / RoleBinding | What may this **identity** do in this project? | `view`, `edit` and a custom role gave three different sets of rights |
+| `oc auth can-i` | Would this request be allowed? | Test access without making changes |
+| `oc adm policy who-can` | Who is allowed to do this? | Audit access from the resource side |
+
+| Good practice | Why |
+|---|---|
+| Build images that run as any non-root UID | They work under `restricted-v2` without extra SCCs |
+| Never grant `anyuid` or `privileged` to fix a failing image | Fix the image instead; those SCCs remove the node protection |
+| Give each application its own service account | You can grant and revoke its access separately |
+| Start from `view` or a custom role, not `edit` or `admin` | Least privilege limits the damage from a stolen token |
+| Give `view` instead of `edit` to people who only need to look | `view` hides secrets |
